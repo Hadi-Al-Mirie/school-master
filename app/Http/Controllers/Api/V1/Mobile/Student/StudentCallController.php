@@ -150,7 +150,7 @@ class StudentCallController extends Controller
                 ->where('status', 'scheduled')
                 ->with(['subject', 'teacher'])
                 ->orderBy('scheduled_at', 'asc');
-            $query->where('scheduled_at', '>=', $now);
+            // $query->where('scheduled_at', '>=', $now);
             $scheduled = $query->get()->map(function (ScheduledCall $s) {
                 return [
                     'id' => $s->id,
