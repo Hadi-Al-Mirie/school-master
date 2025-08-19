@@ -43,6 +43,7 @@ class TeacherStudentsController extends Controller
                             'name' => $pivot->subject->name,
                         ];
                     });
+                $result[$className][$sectionName]['section_id'] = $section->id;
                 $result[$className][$sectionName]['subjects'] = $subjects;
                 $result[$className][$sectionName]['students'] = $students;
             }
