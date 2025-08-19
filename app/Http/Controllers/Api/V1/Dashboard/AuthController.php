@@ -20,38 +20,59 @@ class AuthController extends Controller
    
     public function login(LoginRequest $request)
     {
-        $credentials = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
-        
+        $credentials = $request->only('email', 'password');
         if (Auth::attempt( $credentials)) {
            $user = Auth::user() ;
+           if($user->role_id!=5){
+                return response()->json([
+                    'success'=>false,
+                    'message'=>"Yoar not a maneger "
+                    ],422);
+           }
            $token = $user->createToken('auth_token')->plainTextToken ;
            
             return response()->json([
                 'message' => __('dashboard/auth.success'),
                 'access_token' => $token,
                 'token_type' => 'Bearer',
+                'role_id' => 'required|exists:roles,id',
 
             ],200) ;
         }
      
         return response()->json([
                 'message' => __('dashboard/auth.email_not_verified'),
-            ], 401);
-    
+            ], 401);    
        }
+      public function logout(Request $request)
+{
+    try {
+        $user = $request->user();
+        
+        if (!$user) {
+            return response()->json([
+                'message' => 'Unauthenticated',
+                'success' => false
+            ], 401);
+        }
 
-    public function logout(Request $request)
-    {
-        $request->user()->currentAccessToken()->delete();
-
+        $user->tokens()->delete();
+        
         return response()->json([
-            'message' => 'Successfully logged out'
-        ],200);
+            'message' => __('dashboard/auth.logout_success'),
+            'success' => true
+        ]);
+        
+    } catch (\Exception $e) {
+        Log::error('Logout error: ' . $e->getMessage());
+        return response()->json([
+            'message' => __('dashboard/auth.logout_error'),
+            'success' => false,
+            'error' => config('app.debug') ? $e->getMessage() : null
+        ], 500);
     }
-
+} 
+       
     public function sendPasswordResetLink(Request $request)
     {
         $request->validate([
