@@ -204,10 +204,10 @@ class TeacherCallController extends Controller
             $now = Carbon::now();
             $query = ScheduledCall::query()
                 ->where('created_by', $teacher->id)
-                ->where('status', 'scheduled')
+                // ->where('status', 'scheduled')
                 ->with(['section', 'subject'])
                 ->orderBy('scheduled_at', 'asc');
-            $query->where('scheduled_at', '>=', $now);
+            // $query->where('scheduled_at', '>=', $now);
             $scheduled = $query->get()->map(function (ScheduledCall $s) {
                 return [
                     'id' => $s->id,
@@ -223,7 +223,7 @@ class TeacherCallController extends Controller
                     'scheduled_at' => $s->scheduled_at ? $s->scheduled_at->toDateTimeString() : null,
                     'duration_minutes' => (int) $s->duration_minutes,
                     'status' => $s->status,
-                    'call_id' => $s->call_id, // null until started
+                    'call_id' => $s->call_id,
                     'created_at' => $s->created_at->toDateTimeString(),
                 ];
             })->values();
