@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use App\Models\Section;
 class StudentController extends Controller
 {
     private function generateStudentId()
@@ -36,75 +37,77 @@ class StudentController extends Controller
             'father_name' => 'nullable|string|max:255',
             'mother_name' => 'nullable|string|max:255',
             'father_work' => 'nullable|string|max:255',
-             'mother_work' => 'nullable|string|max:255',
+            'mother_work' => 'nullable|string|max:255',
             'father_number' => 'nullable|string|max:255',
             'mother_number' => 'nullable|string|max:255',
             'birth_day' => 'required|date',
-            'location' => 'required|string|min:8',     
+            'location' => 'required|string|min:8',
 
-        ]); 
-         $email = $request->email ;
-        $password = $request->password ;
-
-         DB::beginTransaction();
-    try {
-
-        $user = User::create([
-            'first_name' => $validated['first_name'],
-            'last_name'  => $validated['last_name'],
-            'email'      => $email,
-            'password'   => Hash::make($password),
-            'role_id'    => 1,
         ]);
+        $email = $request->email;
+        $password = $request->password;
+
+        DB::beginTransaction();
+        try {
+            $user = User::create([
+                'first_name' => $validated['first_name'],
+                'last_name' => $validated['last_name'],
+                'email' => $email,
+                'password' => Hash::make($password),
+                'role_id' => 1,
+            ]);
+            $section = Section::find($validated['section_id']);
+            $classroom = $section->classroom;
+            $classroom_id = $classroom->id;
+            $stage_id = $classroom->stage->id;
+            $student = Student::create([
+                'user_id' => $user->id,
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'gender' => $request->gender,
+                'father_name' => $validated['father_name'],
+                'mother_name' => $validated['mother_name'],
+                'location' => $validated['location'],
+                'section_id' => $validated['section_id'],
+                'father_work' => $validated['father_work'],
+                'mother_work' => $validated['mother_work'],
+                'father_phone' => $validated['father_number'],
+                'mother_phone' => $validated['mother_number'],
+                'birth_day' => $validated['birth_day'],
+                'classroom_id' => $classroom_id,
+                'stage_id' => $stage_id,
+            ]);
 
 
-        $student = Student::create([
-            'user_id' => $user->id,
-            'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
-            'gender' => $request->gender,
-            'father_name' => $validated['father_name'],
-            'mother_name' =>$validated['mother_name'],
-            'location' =>  $validated['location'],
-            'stage_id' => $validated['stage_id'],
-            'section_id' => $validated['section_id'],
-            'classroom_id' => $validated['classroom_id'],
-            'father_work' => $validated['father_work'],
-             'mother_work' => $validated['mother_work'],
-            'father_phone' => $validated['father_number'],
-            'mother_phone' => $validated['mother_number'],
-            'birth_day' => $validated['birth_day'],   
-        ]);
+            DB::commit();
 
-
-       DB::commit();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Student created successfully',
-            'data' => [
-                'student' => $student,
-                'user_account' => [
-                    'email' => $email,
-                    'password' => $password
+            return response()->json([
+                'success' => true,
+                'message' => 'Student created successfully',
+                'data' => [
+                    'student' => $student,
+                    'user_account' => [
+                        'email' => $email,
+                        'password' => $password
+                    ]
                 ]
-            ]
-        ], 201);
+            ], 201);
 
-    } catch (\Exception $e) {
+        } catch (\Exception $e) {
 
-        DB::rollBack();
+            DB::rollBack();
 
-        \Log::error('Create student failed: '.$e->getMessage());
+            \Log::error('Create student failed: ' . $e->getMessage());
 
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to create student',
-            'error' => $e->getMessage(),
-        ], 500);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create student',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
-}
-    public function show(Student $student) {
+    public function show(Student $student)
+    {
         return $student;
-    }        
+    }
 }

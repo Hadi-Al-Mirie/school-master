@@ -33,7 +33,20 @@ class TeacherExamAttemptController extends Controller
                     ->where('section_subjects.teacher_id', $teacher->id);
             })
             ->with(['section', 'subject'])
-            ->get();
+            ->get()
+            ->map(function ($ex) {
+                return [
+                    'id' => $ex->id,
+                    'name' => $ex->name,
+                    'classroom' => $ex->section->classroom->name,
+                    'section_id' => $ex->section->id,
+                    'section_name' => $ex->section->name,
+                    'subject_id' => $ex->subject->id,
+                    'subject_name' => $ex->subject->name,
+                    'semester' => $ex->semester->name,
+                    'max_result' => $ex->max_result
+                ];
+            })->values();
         return response()->json(['success' => true, 'data' => $exams]);
     }
 

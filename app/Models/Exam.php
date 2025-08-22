@@ -33,6 +33,11 @@ class Exam extends Model
         return $this->belongsTo(Supervisor::class, 'created_by');
     }
 
+    public function semester(): BelongsTo
+    {
+        return $this->belongsTo(Semester::class);
+    }
+
     public function section(): BelongsTo
     {
         return $this->belongsTo(Section::class);

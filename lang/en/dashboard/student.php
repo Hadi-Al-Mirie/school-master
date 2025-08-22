@@ -1,3 +1,4 @@
+<?php
 return [
     'list_success' => 'Students fetched successfully.',
     'show_success' => 'Student fetched successfully.',

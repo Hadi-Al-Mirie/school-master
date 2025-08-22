@@ -15,6 +15,10 @@ use App\Http\Controllers\Api\V1\Mobile\Teacher\TeacherNoteController;
 use App\Http\Controllers\Api\V1\Mobile\Teacher\TeacherDictationController;
 use App\Http\Controllers\Api\V1\Mobile\Supervisor\SupervisorStudentsController;
 use App\Http\Controllers\Api\V1\Mobile\Supervisor\SupervisorNoteController;
+use App\Http\Controllers\Api\V1\Mobile\Supervisor\SupervisorAttendanceController;
+use App\Http\Controllers\Api\V1\Mobile\Supervisor\SupervisorExamController;
+use App\Http\Controllers\Api\V1\Mobile\Supervisor\SupervisorClassroomController;
+
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
     return $request->user();
 });
@@ -45,7 +49,7 @@ Route::group([
         'prefix' => 'v1/mobile/student',
         'middleware' => ['auth:sanctum', 'IsStudent'],
     ], function () {
-        Route::post('call/scheduled-calls', [StudentCallController::class, 'scheduledCalls']);
+        Route::get('call/scheduled-calls', [StudentCallController::class, 'scheduledCalls']);
         Route::post('call/join', [StudentCallController::class, 'join']);
     });
     Route::group([
@@ -54,5 +58,8 @@ Route::group([
     ], function () {
         Route::get('students', [SupervisorStudentsController::class, 'index']);
         Route::post('notes/create', [SupervisorNoteController::class, 'store']);
+        Route::post('attendance/register', [SupervisorAttendanceController::class, 'store']);
+        Route::post('exams/create', [SupervisorExamController::class, 'store']);
+        Route::get('classrooms/with-subjects', [SupervisorClassroomController::class, 'classroomsWithSubjects']);
     });
 });

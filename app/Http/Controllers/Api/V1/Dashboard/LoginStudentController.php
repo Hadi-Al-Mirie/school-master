@@ -15,9 +15,9 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 class LoginStudentController extends Controller
 {
-  public function index(Request $request)
+    public function index(Request $request)
     {
-       $stages = Stage::with([
+        $stages = Stage::with([
             'classrooms.sections' => function ($q) {
                 $q->select('id', 'name', 'classroom_id');
             },
