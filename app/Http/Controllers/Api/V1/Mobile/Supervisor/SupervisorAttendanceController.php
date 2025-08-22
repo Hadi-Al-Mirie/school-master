@@ -22,7 +22,7 @@ class SupervisorAttendanceController extends Controller
     {
         try {
             $attendance = $this->attendanceService->createBySupervisor([
-                'type' => $request->input('type'),             // student|teacher
+                'type' => 'student',
                 'attendable_id' => (int) $request->input('attendable_id'),
                 'attendance_type_id' => (int) $request->input('attendance_type_id'),
                 'att_date' => $request->input('att_date'),

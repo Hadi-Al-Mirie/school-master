@@ -45,8 +45,7 @@ class StoreAttendanceRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // student|teacher, normalized in prepareForValidation()
-            'type' => ['required', 'string', Rule::in(['student', 'teacher'])],
+
 
             // ID of student or teacher, checked conditionally below
             'attendable_id' => ['required', 'integer', 'min:1'],
