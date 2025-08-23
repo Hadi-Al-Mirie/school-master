@@ -12,16 +12,8 @@ class StoreAttendanceRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Middleware already restricts to supervisors; allow here.
         return true;
     }
-
-    /**
-     * We normalize possible client inputs:
-     * - Accepts any of: 'type', 'attendable_type', or numeric 'type_id' (1=student, 2=teacher)
-     * - Persisted DB column is 'attendable_type' (FQCN). We *validate* on 'type' (student|teacher) then
-     *   the controller will map to the FQCN.
-     */
     protected function prepareForValidation(): void
     {
         $type = $this->input('type');
@@ -45,18 +37,9 @@ class StoreAttendanceRequest extends FormRequest
     public function rules(): array
     {
         return [
-
-
-            // ID of student or teacher, checked conditionally below
             'attendable_id' => ['required', 'integer', 'min:1'],
-
-            // Present/Absent/... from attendance_types
             'attendance_type_id' => ['required', 'integer', 'exists:attendance_types,id'],
-
-            // Attendance date
             'att_date' => ['required', 'date_format:Y-m-d'],
-
-            // Optional reason (for absence/late, etc.)
             'justification' => [
                 'nullable',
                 'required_if:attendance_type_id,2,3',

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1\Mobile\Supervisor; // <-- fix casing
+namespace App\Http\Controllers\Api\V1\Mobile\Supervisor;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
