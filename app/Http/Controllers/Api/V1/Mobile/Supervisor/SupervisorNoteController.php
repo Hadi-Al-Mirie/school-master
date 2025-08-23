@@ -29,7 +29,7 @@ class SupervisorNoteController extends Controller
 
         $data = $request->validated();
         $status = 'approved';
-        $semester = Semester::where('is_active', true)->first;
+        $semester = Semester::where('is_active', true)->first();
         $student = Student::find($data['student_id']);
         $studentStage = $student->classroom->stage;
         $superVisorStage = $supervisor->stage;
