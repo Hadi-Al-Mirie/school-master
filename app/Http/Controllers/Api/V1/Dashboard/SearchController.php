@@ -3,93 +3,152 @@
 namespace App\Http\Controllers\Api\V1\Dashboard;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Schema;
-use App\Models\Student;
+use App\Http\Requests\Dashboard\search\SearchRequest;
 use App\Models\Teacher;
-use App\Models\Employee;
+use App\Models\Student;
+use App\Models\Supervisor;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class SearchController extends Controller
 {
-    public function search(Request $request)
+    public function index(SearchRequest $request)
     {
-        $data = $request->validate([
-            'q' => 'nullable|string|max:255',
-            'type' => 'nullable|string|in:students,teachers,employees,all',
-            'page' => 'nullable|integer|min:1',
-            'per_page' => 'nullable|integer|min:1|max:100'
-        ]);
+        $validated = $request->validated();
+        $q = $validated['q'];
+        $type = $validated['type'];
 
-        $q = $data['q'] ?? null;
-        $type = $data['type'] ?? 'all';
-        $perPage = $data['per_page'] ?? 15;
+        try {
+            switch ($type) {
+                case 'teacher':
+                    $results = Teacher::with(['user:id,first_name,last_name,email'])
+                        ->where(function ($builder) use ($q) {
+                            $builder->whereHas('user', function ($u) use ($q) {
+                                $u->where('first_name', 'like', "%{$q}%")
+                                    ->orWhere('last_name', 'like', "%{$q}%")
+                                    ->orWhere('email', 'like', "%{$q}%");
+                            })
+                                ->orWhere('phone', 'like', "%{$q}%");
+                        })
+                        ->orderByDesc('id')
+                        ->get()
+                        ->map(function ($t) {
+                            return [
+                                'type' => 'teacher',
+                                'id' => $t->id,
+                                'user' => [
+                                    'id' => $t->user->id ?? null,
+                                    'first_name' => $t->user->first_name ?? null,
+                                    'last_name' => $t->user->last_name ?? null,
+                                    'email' => $t->user->email ?? null,
+                                ],
+                                'phone' => $t->phone,
+                            ];
+                        })
+                        ->values();
+                    break;
 
-        if (!$q) {
-            return response()->json(['success' => true, 'query' => $q, 'type' => $type, 'results' => []], 200);
+                case 'student':
+                    $results = Student::with(['user:id,first_name,last_name,email'])
+                        ->where(function ($builder) use ($q) {
+                            $builder->whereHas('user', function ($u) use ($q) {
+                                $u->where('first_name', 'like', "%{$q}%")
+                                    ->orWhere('last_name', 'like', "%{$q}%")
+                                    ->orWhere('email', 'like', "%{$q}%");
+                            })
+                                ->orWhere('father_name', 'like', "%{$q}%")
+                                ->orWhere('mother_name', 'like', "%{$q}%")
+                                ->orWhere('father_number', 'like', "%{$q}%")
+                                ->orWhere('mother_number', 'like', "%{$q}%")
+                                ->orWhere('location', 'like', "%{$q}%");
+                        })
+                        ->orderByDesc('id')
+                        ->get()
+                        ->map(function ($s) {
+                            return [
+                                'type' => 'student',
+                                'id' => $s->id,
+                                'user' => [
+                                    'id' => $s->user->id ?? null,
+                                    'first_name' => $s->user->first_name ?? null,
+                                    'last_name' => $s->user->last_name ?? null,
+                                    'email' => $s->user->email ?? null,
+                                ],
+                                'father_name' => $s->father_name ?? null,
+                                'mother_name' => $s->mother_name ?? null,
+                                'father_number' => $s->father_number ?? null,
+                                'mother_number' => $s->mother_number ?? null,
+                                'location' => $s->location ?? null,
+                                'gender' => $s->gender ?? null,
+                                'stage' => $s->stage->name ?? null,
+                                'classroom' => $s->classroom->name ?? null,
+                                'section' => $s->section->name ?? null,
+                            ];
+                        })
+                        ->values();
+                    break;
+
+                case 'supervisor':
+                    $results = Supervisor::query()
+                        // Constrain + eager-load in one go (Laravel 9+)
+                        ->withWhereHas('user', function ($u) use ($q) {
+                            $u->where(function ($uu) use ($q) {
+                                $uu->where('first_name', 'like', "%{$q}%")
+                                    ->orWhere('last_name', 'like', "%{$q}%")
+                                    ->orWhere('email', 'like', "%{$q}%");
+                            });
+                        })
+                        // If the input looks like an email, also do an exact match to be safe
+                        ->when(str_contains($q, '@'), function ($query) use ($q) {
+                            $query->orWhereHas('user', function ($u) use ($q) {
+                                $u->whereRaw('LOWER(email) = ?', [strtolower($q)]);
+                            });
+                        })
+                        ->orderByDesc('id')
+                        ->with(['user:id,first_name,last_name,email']) // ensure user is returned
+                        ->get()
+                        ->map(function ($sp) {
+                            return [
+                                'type' => 'supervisor',
+                                'id' => $sp->id,
+                                'user' => [
+                                    'id' => $sp->user->id ?? null,
+                                    'first_name' => $sp->user->first_name ?? null,
+                                    'last_name' => $sp->user->last_name ?? null,
+                                    'email' => $sp->user->email ?? null,
+                                ],
+                                'phone_number' => $sp->phone ?? null,
+                                'stage' => $sp->stage->name ?? null,
+                            ];
+                        })
+                        ->values();
+                    break;
+
+                default:
+                    $results = collect();
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => __('dashboard/search/messages.search_success'),
+                'filters' => [
+                    'type' => $type,
+                    'q' => $q,
+                ],
+                'data' => $results,
+            ]);
+
+        } catch (Throwable $e) {
+            Log::error('Dashboard search failed', [
+                'error' => $e->getMessage(),
+                'type' => $type,
+                'q' => $q,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => __('dashboard/search/messages.unexpected_error'),
+            ], 500);
         }
-
-        $results = [];
-
-        $searchModel = function(string $modelClass, array $columns, bool $searchUser = true) use ($q, $perPage) {
-
-            $modelInstance = new $modelClass;
-            $table = $modelInstance->getTable();
-
-            $existing = Schema::getColumnListing($table);
-            $columns = array_values(array_intersect($columns, $existing));
-
-            $query = $modelClass::query();
-
-            $query->where(function($qb) use ($columns, $q, $searchUser, $table) {
-
-                if ($searchUser) {
-                    $qb->whereHas('user', function($u) use ($q) {
-                        $u->where('first_name', 'like', "%{$q}%")
-                          ->orWhere('last_name', 'like', "%{$q}%")
-                          ->orWhere('email', 'like', "%{$q}%");
-                    });
-                }
-
-                if (!empty($columns)) {
-                    $qb->orWhere(function($sub) use ($columns, $q, $table) {
-                        foreach ($columns as $col) {
-
-                            $sub->orWhere("{$table}.{$col}", 'like', "%{$q}%");
-                        }
-                    });
-                }
-            });
-
-            return $query->with('user')
-                         ->paginate($perPage)
-                         ->appends(['q' => request('q'), 'type' => request('type')]);
-        };
-
-
-        if ($type === 'students' || $type === 'all') {
-            $results['students'] = $searchModel(Student::class, [
-                'first_name', 'last_name',
-                'father_name','mother_name','gender','location','birth_day'
-            ], true);
-        }
-
-        if ($type === 'teachers' || $type === 'all') {
-            $results['teachers'] = $searchModel(Teacher::class, [
-                'teacher_mobile_number','landline_phone_number','detailed_address','subject'
-            ], true);
-        }
-
-        if ($type === 'employees' || $type === 'all') {
-            $results['employees'] = $searchModel(Employee::class, [
-                'employee_mobile_number','landline_phone_number','detailed_address'
-            ], true);
-        }
-
-        return response()->json([
-            'success' => true,
-            'query' => $q,
-            'type' => $type,
-            'results' => $results
-        ], 200);
     }
 }

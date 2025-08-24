@@ -12,7 +12,7 @@ use App\Models\Classroom;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 class StageController extends Controller
 {
@@ -99,6 +99,33 @@ class StageController extends Controller
             'success' => true,
             'data' => $data,
         ], 200);
+    }
+
+    public function indexStagesOnly()
+    {
+        try {
+            $stages = Stage::all()
+                ->map(function ($s) {
+                    return [
+                        'id' => $s->id,
+                        'name' => $s->name
+                    ];
+                });
+            return response()->json(
+                [
+                    "success" => true,
+                    "message" => "loaded",
+                    "data" => $stages
+                ],
+                200
+            );
+        } catch (\Exception $e) {
+            Log::error('stage only list error ' . $e->getMessage());
+            return response()->json([
+                'message' => __('list stages only failed'),
+                'success' => false,
+            ], 500);
+        }
     }
 
 }

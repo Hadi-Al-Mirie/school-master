@@ -19,7 +19,6 @@ use App\Http\Controllers\Api\V1\Dashboard\YearController as DashboardYearControl
 use App\Http\Controllers\Api\V1\Dashboard\EventsController as DashboardEventsController;
 use App\Http\Controllers\Api\V1\Dashboard\StageController as DashboardStageController;
 
-
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
     return $request->user();
 });
@@ -44,11 +43,12 @@ Route::prefix('v1/dashboard')->middleware('auth:sanctum')->group(function () {
     Route::apiResource('/student', StudentController::class);
     Route::apiResource('/teacher', TeacherController::class);
     Route::apiResource('/supervisor', SupervisorController::class);
-    Route::post('/search', [SearchController::class, 'search']);
+    Route::post('search', [SearchController::class, 'index']);
     Route::get('/semester', [DashboardSemesterController::class, 'index']);
     Route::post('/semester', [DashboardSemesterController::class, 'store']);
     Route::post('/years', [DashboardYearController::class, 'store']);
     Route::post('/events', [DashboardEventsController::class, 'store']);
     Route::get('/get-stages', [DashboardStageController::class, 'index']);
+    Route::get('/get-stages-only', [DashboardStageController::class, 'indexStagesOnly']);
 
 });

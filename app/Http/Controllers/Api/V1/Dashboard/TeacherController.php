@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Dashboard\teacher\StoreTeacherRequest;
 use App\Models\User;
 use App\Models\Teacher;
 use Illuminate\Http\Request;
@@ -13,27 +14,16 @@ class TeacherController extends Controller
 {
     public function index()
     {
-
         $teachers = Teacher::all();
         return response()->json($teachers, 200);
-
     }
-    public function store(Request $request)
+    public function store(StoreTeacherRequest $request)
     {
-        $validated = $request->validate([
-            'first_name' => 'required|string|max:100',
-            'last_name' => 'required|string|max:100',
-            'email' => 'required|email|min:5|max:255',
-            'password' => 'required|min:8|max:255',
-            'phone' => 'required|string|min:10|max:20'
-        ]);
-
+        $validated = $request;
         $email = $request->email;
         $password = $request->password;
-
         DB::beginTransaction();
         try {
-
             $user = User::create([
                 'first_name' => $validated['first_name'],
                 'last_name' => $validated['last_name'],
@@ -41,39 +31,57 @@ class TeacherController extends Controller
                 'password' => $password,
                 'role_id' => 2,
             ]);
-
-
             $teacher = Teacher::create([
                 'user_id' => $user->id,
                 'phone' => $validated['phone'],
             ]);
-
-
+            $assigned = collect();
+            $payloadPairs = $request->input('section_subjects', []);
+            if (is_array($payloadPairs) && !empty($payloadPairs)) {
+                foreach ($payloadPairs as $pair) {
+                    $sectionId = (int) $pair['section_id'];
+                    $subjectId = (int) $pair['subject_id'];
+                    $existing = \App\Models\SectionSubject::where('section_id', $sectionId)
+                        ->where('subject_id', $subjectId)
+                        ->first();
+                    if ($existing) {
+                        $existing->teacher_id = $teacher->id;
+                        $existing->save();
+                        $assigned->push($existing->load(['section', 'subject']));
+                    } else {
+                        $created = \App\Models\SectionSubject::create([
+                            'section_id' => $sectionId,
+                            'subject_id' => $subjectId,
+                            'teacher_id' => $teacher->id,
+                        ])->load(['section', 'subject']);
+                        $assigned->push($created);
+                    }
+                }
+            }
             DB::commit();
-
             return response()->json([
                 'success' => true,
-                'message' => 'Teacher created successfully',
+                'message' => __('dashboard/teacher/store/messages.created_successfully'),
                 'data' => [
-                    'student' => $teacher,
-                    'user_account' => [
-                        'email' => $email,
-                        'password' => $password
-                    ]
-                ]
+                    'user' => [
+                        'id' => $user->id,
+                        'first_name' => $user->first_name,
+                        'last_name' => $user->last_name,
+                        'email' => $user->email,
+                    ],
+                    'teacher' => $teacher->load('user'),
+                    'section_subjects' => $assigned->values(),
+                ],
             ], 201);
-
         } catch (\Exception $e) {
             DB::rollBack();
-
             \Log::error('Create teacher failed: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create teacher',
+                'message' => __('dashboard/teacher/store/messages.unexpected_error'),
                 'error' => $e->getMessage(),
             ], 500);
         }
-
     }
     public function show($id)
     {
