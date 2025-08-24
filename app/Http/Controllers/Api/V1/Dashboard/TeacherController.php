@@ -13,10 +13,10 @@ class TeacherController extends Controller
 {
     public function index()
     {
-    
+
         $teachers = Teacher::all();
-    return response()->json($teachers, 200);
-    
+        return response()->json($teachers, 200);
+
     }
     public function store(Request $request)
     {
@@ -28,54 +28,54 @@ class TeacherController extends Controller
             'phone' => 'required|string|min:10|max:20'
         ]);
 
-         $email = $request->email ;
-        $password = $request->password ;
+        $email = $request->email;
+        $password = $request->password;
 
         DB::beginTransaction();
-    try {
+        try {
 
-        $user = User::create([
-            'first_name' => $validated['first_name'],
-            'last_name'  => $validated['last_name'],
-            'email'      => $email,
-            'password'   =>$password,
-            'role_id'    => 2,
-        ]);
-
-
-        $teacher = Teacher::create([
-            'user_id' => $user->id,
-            'phone'  => $validated['phone'], 
-        ]);
+            $user = User::create([
+                'first_name' => $validated['first_name'],
+                'last_name' => $validated['last_name'],
+                'email' => $email,
+                'password' => $password,
+                'role_id' => 2,
+            ]);
 
 
-       DB::commit();
+            $teacher = Teacher::create([
+                'user_id' => $user->id,
+                'phone' => $validated['phone'],
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Teacher created successfully',
-            'data' => [
-                'student' => $teacher,
-                'user_account' => [
-                    'email' => $email,
-                    'password' => $password
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Teacher created successfully',
+                'data' => [
+                    'student' => $teacher,
+                    'user_account' => [
+                        'email' => $email,
+                        'password' => $password
+                    ]
                 ]
-            ]
-        ], 201);
+            ], 201);
 
-    } catch (\Exception $e) {
-        DB::rollBack();
+        } catch (\Exception $e) {
+            DB::rollBack();
 
-        \Log::error('Create teacher failed: '.$e->getMessage());
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to create teacher',
-            'error' => $e->getMessage(), 
-        ], 500);
+            \Log::error('Create teacher failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create teacher',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+
     }
-
-}
-     public function show($id)
+    public function show($id)
     {
         $teacher = Teacher::findOrFail($id);
         return response()->json($teacher, 200);
@@ -91,7 +91,7 @@ class TeacherController extends Controller
     public function destroy(Teacher $teacher)
     {
         $teacher->delete();
-         return response()->json(['message' => 'Teacher deleted'], 200);
+        return response()->json(['message' => 'Teacher deleted'], 200);
     }
-    
+
 }

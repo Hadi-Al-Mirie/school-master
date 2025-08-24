@@ -147,7 +147,7 @@ class StudentCallController extends Controller
             $now = now();
             $query = ScheduledCall::query()
                 ->where('section_id', $sectionId)
-                ->where('status', 'scheduled')
+                // ->where('status', 'scheduled')
                 ->with(['subject', 'teacher'])
                 ->orderBy('scheduled_at', 'asc');
             // $query->where('scheduled_at', '>=', $now);
