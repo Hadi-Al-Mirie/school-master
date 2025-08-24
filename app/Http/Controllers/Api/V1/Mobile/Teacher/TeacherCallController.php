@@ -17,6 +17,7 @@ use App\Http\Requests\Mobile\Teacher\DeleteScheduledCallRequest;
 use App\Services\Mobile\CallService;
 use Illuminate\Support\Facades\Log;
 
+
 class TeacherCallController extends Controller
 {
     protected $zego;
@@ -254,16 +255,23 @@ class TeacherCallController extends Controller
     public function end(Call $call)
     {
         try {
-            // ensure call is active
             if ($call->ended_at !== null) {
                 return response()->json([
                     'status' => false,
                     'message' => __('messages.call_already_ended'),
                 ], 422);
             }
-
-            $call->update(['ended_at' => now()]);
-
+            DB::transaction(function () use ($call) {
+                $call->update(['ended_at' => now()]);
+                if ($call->relationLoaded('scheduledCall')) {
+                    optional($call->scheduledCall)->delete();
+                } else {
+                    $scheduled = ScheduledCall::where('call_id', $call->id)->first();
+                    if ($scheduled) {
+                        $scheduled->delete();
+                    }
+                }
+            });
             return response()->json([
                 'status' => true,
                 'message' => __('messages.call_ended_successfully'),
