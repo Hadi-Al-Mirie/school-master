@@ -106,7 +106,7 @@ class StudentCallController extends Controller
                         'call_id' => $call->id,
                         'channel_name' => $call->channel_name,
                         'token' => $token,
-                        'started_at' => $call->started_at ? $call->started_at->toDateTimeString() : null,
+                        'started_at' => $call->started_at ? $call->started_at : null,
                     ],
                 ], 200);
             });
