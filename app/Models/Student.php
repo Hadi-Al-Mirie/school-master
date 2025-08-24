@@ -10,20 +10,19 @@ class Student extends Model
         'user_id',
         'father_name',
         'mother_name',
-        'father_work',
-        'mother_work',
-        'father_phone',
-        'mother_phone',
+        'father_number',
+        'mother_number',
+        'cashed_points',
+        'gender',
         'location',
         'birth_day',
         'diseases',
         'special_notes',
-        'stage_id',
-        'classroom_id',
         'section_id',
-        'gender',
-        'cashed_points'
+        'classroom_id',
+        'stage_id',
     ];
+
 
     public function user()
     {

@@ -15,19 +15,17 @@ return new class extends Migration {
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('father_name');
             $table->string('mother_name');
-            $table->string('father_work');
-            $table->string('mother_work');
-            $table->string('father_phone');
-            $table->string('mother_phone');
+            $table->string('father_number');
+            $table->string('mother_number');
             $table->decimal('cashed_points', 8, 2)->default(0.00);
             $table->enum('gender', ['male', 'female']);
             $table->string('location');
             $table->date('birth_day');
             $table->string('diseases')->nullable();
             $table->string('special_notes')->nullable();
-            $table->foreignId('stage_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('classroom_id')->constrained()->cascadeOnDelete();
             $table->foreignId('section_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('classroom_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('stage_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
         });
     }
