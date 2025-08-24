@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\v1\Dashboard;
+namespace App\Http\Controllers\Api\V1\Dashboard;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -32,7 +32,7 @@ class EventsController extends Controller
             ], 422);
         }
 
-        $events = Event::create($request->only(['start_date','end_date', 'notes','title']));
+        $events = Event::create($request->only(['start_date', 'end_date', 'notes', 'title']));
 
         return response()->json([
             'success' => true,

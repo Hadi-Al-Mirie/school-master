@@ -21,9 +21,9 @@ class JoinCallRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'call_id.required' => __('mobile/call.validation.call_id_required'),
-            'call_id.integer' => __('mobile/call.validation.call_id_integer'),
-            'call_id.exists' => __('mobile/call.validation.call_exists'),
+            'call_id.required' => __('mobile/student/call.validation.call_id_required'),
+            'call_id.integer' => __('mobile/student/call.validation.call_id_integer'),
+            'call_id.exists' => __('mobile/student/call.validation.call_exists'),
         ];
     }
 }

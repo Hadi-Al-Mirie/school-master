@@ -18,7 +18,7 @@ class CreateNoteRequest extends FormRequest
             'student_id' => ['required', 'integer', 'exists:students,id'],
             'type' => ['required', 'string', 'in:positive,negative'],
             'reason' => ['required', 'string', 'min:4', 'max:255'],
-            'value' => ['nullable', 'numeric', 'min:0'],
+            'value' => ['required', 'numeric', 'min:0', 'max:100'],
         ];
     }
 
@@ -37,8 +37,10 @@ class CreateNoteRequest extends FormRequest
             'reason.min' => __('mobile/supervisor/notes.validation.reason_min'),
             'reason.max' => __('mobile/supervisor/notes.validation.reason_max'),
 
+            'value.required' => __('mobile/supervisor/notes.validation.value_required'),
             'value.numeric' => __('mobile/supervisor/notes.validation.value_numeric'),
             'value.min' => __('mobile/supervisor/notes.validation.value_min'),
+            'value.max' => __('mobile/supervisor/notes.validation.value_max'),
 
             'course_id.integer' => __('mobile/supervisor/notes.validation.course_integer'),
             'course_id.exists' => __('mobile/supervisor/notes.validation.course_exists'),

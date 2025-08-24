@@ -7,6 +7,8 @@ use App\Models\Note;
 use App\Models\User;
 use App\Models\Student;
 use App\Models\Semester;
+use Nette\Utils\Random;
+use PhpParser\Node\Scalar\Float_;
 
 class NoteSeeder extends Seeder
 {
@@ -27,7 +29,7 @@ class NoteSeeder extends Seeder
                 'reason' => "Auto-generated note #{$i}",
                 'type' => (rand(0, 1) ? 'positive' : 'negative'),
                 'status' => 'approved',
-                'value' => rand(1, 5),
+                'value' => random_int(-10, 10) + (mt_rand() / mt_getrandmax()),
             ]);
         }
     }

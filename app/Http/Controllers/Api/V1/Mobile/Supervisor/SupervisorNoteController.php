@@ -40,13 +40,15 @@ class SupervisorNoteController extends Controller
             ], 403);
         }
         try {
+            $raw = (float) $data['value'];
+            $value = $data['type'] === 'positive' ? abs($raw) : -abs($raw);
             $note = Note::create([
                 'by_id' => $user->id,
                 'student_id' => $data['student_id'],
                 'reason' => $data['reason'],
                 'type' => $data['type'],
                 'semester_id' => $semester->id,
-                'value' => $data['value'] ?? null,
+                'value' => $value,
                 'status' => $status,
             ]);
 

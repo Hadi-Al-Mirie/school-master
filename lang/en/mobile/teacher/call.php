@@ -31,8 +31,12 @@ return [
         'channel_max' => 'Channel name must not exceed :max characters.',
     ],
 
+    'messages' => [
+        'deleted' => 'Scheduled call deleted successfully.',
+        'server_error' => 'Something went wrong while deleting the scheduled call.',
+    ],
+
     'errors' => [
-        'not_teacher' => 'Authenticated user is not a teacher.',
         'fetch_scheduled_failed' => 'Failed to fetch scheduled calls. Please try again.',
         'section_or_subject_not_assigned' => 'You are not assigned to teach/manage the selected section and subject.',
         'scheduled_overlap' => 'You already have a scheduled call that overlaps this time.',
@@ -43,5 +47,8 @@ return [
         'cannot_start_before_scheduled' => 'You cannot start a scheduled call before its scheduled time.',
         'cannot_start_before_scheduled_detail' => 'Scheduled call cannot be started before :scheduled_at.',
         'save_failed' => 'Failed to save call data. Please try again.',
+        'not_teacher' => 'Only teachers can perform this action.',
+        'not_owner' => 'You can only delete scheduled calls you created.',
+        'not_deletable' => 'This scheduled call cannot be deleted (it is not in scheduled status).',
     ],
 ];

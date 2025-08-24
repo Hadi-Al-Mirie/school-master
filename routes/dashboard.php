@@ -14,10 +14,10 @@ use App\Http\Controllers\Api\V1\Dashboard\SupervisorController as SupervisorCont
 use App\Http\Controllers\Api\V1\Dashboard\SearchController as SearchController;
 use App\Http\Controllers\TeacherController as DashboardTeacherController;
 use App\Http\Controllers\SessionYearController;
-use App\Http\Controllers\Api\v1\Dashboard\SemesterController as DashboardSemesterController;
-use App\Http\Controllers\Api\v1\Dashboard\YearController as DashboardYearController;
-use App\Http\Controllers\Api\v1\Dashboard\EventsController as DashboardEventsController;
-use App\Http\Controllers\Api\v1\Dashboard\LoginStudentController as DashboardLoginStudentController;
+use App\Http\Controllers\Api\V1\Dashboard\SemesterController as DashboardSemesterController;
+use App\Http\Controllers\Api\V1\Dashboard\YearController as DashboardYearController;
+use App\Http\Controllers\Api\V1\Dashboard\EventsController as DashboardEventsController;
+use App\Http\Controllers\Api\V1\Dashboard\LoginStudentController as DashboardLoginStudentController;
 
 
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {

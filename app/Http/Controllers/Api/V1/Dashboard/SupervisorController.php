@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\v1\Dashboard;
+namespace App\Http\Controllers\Api\V1\Dashboard;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -44,7 +44,7 @@ class SupervisorController extends Controller
         $supervisor = Supervisor::create([
             'user_id' => $user->id,
             'phone' => $validated['phone'],
-            'salary' => $validated['salary'],   
+            'salary' => $validated['salary'],
         ]);
 
 

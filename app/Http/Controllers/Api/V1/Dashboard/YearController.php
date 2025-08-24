@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\v1\Dashboard;
+namespace App\Http\Controllers\Api\V1\Dashboard;
 
 use App\Http\Controllers\Controller;
 use App\Models\Year;
@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Validator;
 
 class YearController extends Controller
 {
-   
+
     public function index()
     {
         return Year::all();
@@ -33,4 +33,3 @@ class YearController extends Controller
     }
 
 }
-

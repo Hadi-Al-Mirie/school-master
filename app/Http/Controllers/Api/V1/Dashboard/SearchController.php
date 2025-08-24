@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\v1\Dashboard;
+namespace App\Http\Controllers\Api\V1\Dashboard;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -41,7 +41,7 @@ class SearchController extends Controller
             $query = $modelClass::query();
 
             $query->where(function($qb) use ($columns, $q, $searchUser, $table) {
-              
+
                 if ($searchUser) {
                     $qb->whereHas('user', function($u) use ($q) {
                         $u->where('first_name', 'like', "%{$q}%")
@@ -53,7 +53,7 @@ class SearchController extends Controller
                 if (!empty($columns)) {
                     $qb->orWhere(function($sub) use ($columns, $q, $table) {
                         foreach ($columns as $col) {
-                            
+
                             $sub->orWhere("{$table}.{$col}", 'like', "%{$q}%");
                         }
                     });
@@ -65,10 +65,10 @@ class SearchController extends Controller
                          ->appends(['q' => request('q'), 'type' => request('type')]);
         };
 
-        
+
         if ($type === 'students' || $type === 'all') {
             $results['students'] = $searchModel(Student::class, [
-                'first_name', 'last_name', 
+                'first_name', 'last_name',
                 'father_name','mother_name','gender','location','birth_day'
             ], true);
         }

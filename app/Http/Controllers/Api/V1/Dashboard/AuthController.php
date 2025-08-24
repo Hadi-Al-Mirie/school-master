@@ -17,7 +17,7 @@ use App\Http\Controllers\Controller;
 class AuthController extends Controller
 {
 
-   
+
     public function login(LoginRequest $request)
     {
         $credentials = $request->only('email', 'password');
@@ -30,7 +30,7 @@ class AuthController extends Controller
                     ],422);
            }
            $token = $user->createToken('auth_token')->plainTextToken ;
-           
+
             return response()->json([
                 'message' => __('dashboard/auth.success'),
                 'access_token' => $token,
@@ -39,16 +39,16 @@ class AuthController extends Controller
 
             ],200) ;
         }
-     
+
         return response()->json([
                 'message' => __('dashboard/auth.email_not_verified'),
-            ], 401);    
+            ], 401);
        }
       public function logout(Request $request)
 {
     try {
         $user = $request->user();
-        
+
         if (!$user) {
             return response()->json([
                 'message' => 'Unauthenticated',
@@ -57,12 +57,12 @@ class AuthController extends Controller
         }
 
         $user->tokens()->delete();
-        
+
         return response()->json([
             'message' => __('dashboard/auth.logout_success'),
             'success' => true
         ]);
-        
+
     } catch (\Exception $e) {
         Log::error('Logout error: ' . $e->getMessage());
         return response()->json([
@@ -71,8 +71,8 @@ class AuthController extends Controller
             'error' => config('app.debug') ? $e->getMessage() : null
         ], 500);
     }
-} 
-       
+}
+
     public function sendPasswordResetLink(Request $request)
     {
         $request->validate([

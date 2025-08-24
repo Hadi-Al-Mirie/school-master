@@ -18,6 +18,10 @@ use App\Http\Controllers\Api\V1\Mobile\Supervisor\SupervisorNoteController;
 use App\Http\Controllers\Api\V1\Mobile\Supervisor\SupervisorAttendanceController;
 use App\Http\Controllers\Api\V1\Mobile\Supervisor\SupervisorExamController;
 use App\Http\Controllers\Api\V1\Mobile\Supervisor\SupervisorClassroomController;
+use App\Http\Controllers\Api\V1\Mobile\Supervisor\SupervisorNoteApprovalController;
+use App\Http\Controllers\Api\V1\Mobile\Supervisor\SupervisorExamApprovalController;
+
+use App\Http\Controllers\Api\V1\Mobile\Student\StudentHomeController;
 
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
     return $request->user();
@@ -39,6 +43,7 @@ Route::group([
         Route::get('call/scheduled-calls', [TeacherCallController::class, 'scheduledCalls']);
         Route::post('scheduled-call/{scheduled_call}/start', [TeacherCallController::class, 'startScheduled']);
         Route::post('call/{call}/end', [TeacherCallController::class, 'end']);
+        Route::delete('scheduled-call/{scheduled_call}', [TeacherCallController::class, 'destroyScheduled']);
         Route::post('notes/create', [TeacherNoteController::class, 'store']);
         Route::post('dictations/create', [TeacherDictationController::class, 'store']);
         Route::post('quiz/create', [TeacherQuizController::class, 'store']);
@@ -49,6 +54,7 @@ Route::group([
         'prefix' => 'v1/mobile/student',
         'middleware' => ['auth:sanctum', 'IsStudent'],
     ], function () {
+        Route::get('home', [StudentHomeController::class, 'index']);
         Route::get('call/scheduled-calls', [StudentCallController::class, 'scheduledCalls']);
         Route::post('call/join', [StudentCallController::class, 'join']);
     });
@@ -58,8 +64,13 @@ Route::group([
     ], function () {
         Route::get('students', [SupervisorStudentsController::class, 'index']);
         Route::post('notes/create', [SupervisorNoteController::class, 'store']);
+        Route::get('notes/stage', [SupervisorNoteApprovalController::class, 'index']);
+        Route::post('notes/{note}/decision', [SupervisorNoteApprovalController::class, 'decide']);
         Route::post('attendance/register', [SupervisorAttendanceController::class, 'store']);
         Route::post('exams/create', [SupervisorExamController::class, 'store']);
+        Route::get('exams/waiting', [SupervisorExamApprovalController::class, 'waiting']);
+        Route::get('exams/{exam}/attempts', [SupervisorExamApprovalController::class, 'attempts']);
+        Route::post('exams/{exam}/finalize', [SupervisorExamApprovalController::class, 'finalize']);
         Route::get('classrooms/with-subjects', [SupervisorClassroomController::class, 'classroomsWithSubjects']);
     });
 });

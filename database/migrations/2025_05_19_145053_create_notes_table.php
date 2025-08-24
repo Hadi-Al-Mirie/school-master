@@ -18,7 +18,7 @@ return new class extends Migration {
             $table->text('reason');
             $table->enum('type', ['positive', 'negative']);
             $table->enum('status', ['pending', 'approved', 'dismissed'])->default('pending');
-            $table->integer('value')->nullable();
+            $table->decimal('value', 8, 2)->nullable();
             $table->timestamps();
         });
     }

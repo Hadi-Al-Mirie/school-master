@@ -12,11 +12,16 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\SectionSubject;
 use App\Http\Requests\Mobile\Teacher\ScheduleCallRequest;
 use App\Models\ScheduledCall;
+use Illuminate\Http\JsonResponse;
+use App\Http\Requests\Mobile\Teacher\DeleteScheduledCallRequest;
+use App\Services\Mobile\CallService;
+use Illuminate\Support\Facades\Log;
+
 class TeacherCallController extends Controller
 {
     protected $zego;
 
-    public function __construct(ZegoService $zego)
+    public function __construct(ZegoService $zego, private CallService $callService)
     {
         $this->zego = $zego;
     }
@@ -134,7 +139,6 @@ class TeacherCallController extends Controller
                     'scheduled_call' => [
                         __('mobile/teacher/call.errors.cannot_start_before_scheduled_detail', [
                             'scheduled_at' => $scheduled_call->scheduled_at->toDateTimeString(),
-
                         ])
                     ],
                     'now' => now()
@@ -269,6 +273,28 @@ class TeacherCallController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => __('messages.unexpected_error'),
+            ], 500);
+        }
+    }
+
+    public function destroyScheduled(DeleteScheduledCallRequest $request, ScheduledCall $scheduled_call): JsonResponse
+    {
+        try {
+            $this->callService->deleteScheduledByTeacher($scheduled_call);
+            return response()->json([
+                'message' => __('mobile/teacher/call.messages.deleted'),
+            ]);
+        } catch (\RuntimeException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 422);
+        } catch (\Throwable $e) {
+            Log::error('Teacher delete scheduled call error', [
+                'scheduled_call_id' => $scheduled_call->id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+            return response()->json([
+                'message' => __('mobile/teacher/call.messages.server_error'),
             ], 500);
         }
     }
