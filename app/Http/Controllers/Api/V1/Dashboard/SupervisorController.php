@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Supervisor;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 
 class SupervisorController extends Controller
@@ -21,60 +22,54 @@ class SupervisorController extends Controller
     {
         $validated = $request->validate([
             'first_name' => 'required|string|max:150',
-            'last_name'  => 'required|string|max:150',
+            'last_name' => 'required|string|max:150',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8',
             'phone' => 'required|string|min:10|max:20',
+            'stage_id' => 'required|integer|exists:stages,id'
         ]);
-         $email = $request->email ;
-        $password = $request->password ;
+        $email = $request->email;
+        $password = $request->password;
 
-         DB::beginTransaction();
-    try {
-
-        $user = User::create([
-            'first_name' => $validated['first_name'],
-            'last_name'  => $validated['last_name'],
-            'email'      => $email,
-            'password'   =>$password,
-            'role_id'    => 4,
-        ]);
-
-
-        $supervisor = Supervisor::create([
-            'user_id' => $user->id,
-            'phone' => $validated['phone'],
-            'salary' => $validated['salary'],
-        ]);
-
-
-       DB::commit();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Supervisor created successfully',
-            'data' => [
-                'supervisor' => $supervisor,
-                'user_account' => [
-                    'email' => $email,
-                    'password' => $password
+        DB::beginTransaction();
+        try {
+            $user = User::create([
+                'first_name' => $validated['first_name'],
+                'last_name' => $validated['last_name'],
+                'email' => $email,
+                'password' => $password,
+                'role_id' => 4,
+            ]);
+            $supervisor = Supervisor::create([
+                'user_id' => $user->id,
+                'phone' => $validated['phone'],
+                'stage_id' => $validated['stage_id'],
+            ]);
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => 'Supervisor created successfully',
+                'data' => [
+                    'supervisor' => $supervisor,
+                    'user_account' => [
+                        'email' => $email,
+                    ]
                 ]
-            ]
-        ], 201);
+            ], 201);
 
-    } catch (\Exception $e) {
+        } catch (\Exception $e) {
 
-        DB::rollBack();
+            DB::rollBack();
 
-        \Log::error('Create student failed: '.$e->getMessage());
+            \Log::error('Create student failed: ' . $e->getMessage());
 
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to create student',
-            'error' => $e->getMessage(),
-        ], 500);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create student',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
-}
 
     public function show($id)
     {
