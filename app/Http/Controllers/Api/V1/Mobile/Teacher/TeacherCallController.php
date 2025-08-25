@@ -112,6 +112,7 @@ class TeacherCallController extends Controller
 
     public function startScheduled(ScheduledCall $scheduled_call)
     {
+
         $user = auth()->user();
         $teacher = $user ? $user->teacher : null;
         if (!$teacher) {
@@ -157,6 +158,10 @@ class TeacherCallController extends Controller
                     'subject_id' => $scheduled_call->subject_id,
                     'started_at' => now(),
                     'ended_at' => null,
+                ]);
+                Log::info('JoinCallRequest incoming', [
+                    'call_id' => $call->id,
+                    'user_id' => Auth::user()->id,
                 ]);
                 $call->participants()->create([
                     'user_id' => auth()->id(),
