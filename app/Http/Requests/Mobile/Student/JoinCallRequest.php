@@ -3,12 +3,20 @@
 namespace App\Http\Requests\Mobile\Student;
 
 use Illuminate\Foundation\Http\FormRequest;
-
+use Illuminate\Support\Facades\Log;
 class JoinCallRequest extends FormRequest
 {
     public function authorize(): bool
     {
         return true;
+    }
+    protected function prepareForValidation(): void
+    {
+        Log::info('JoinCallRequest incoming', [
+            'call_id' => $this->input('call_id'),
+            'user_id' => optional($this->user())->id,
+            'ip' => $this->ip(),
+        ]);
     }
 
     public function rules(): array
