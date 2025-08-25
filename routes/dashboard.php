@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\V1\Dashboard\SemesterController as DashboardSemeste
 use App\Http\Controllers\Api\V1\Dashboard\YearController as DashboardYearController;
 use App\Http\Controllers\Api\V1\Dashboard\EventsController as DashboardEventsController;
 use App\Http\Controllers\Api\V1\Dashboard\StageController as DashboardStageController;
+use App\Http\Controllers\Api\V1\Dashboard\ScheduleController;
 
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
     return $request->user();
@@ -50,5 +51,6 @@ Route::prefix('v1/dashboard')->middleware('auth:sanctum')->group(function () {
     Route::post('/events', [DashboardEventsController::class, 'store']);
     Route::get('/get-stages', [DashboardStageController::class, 'index']);
     Route::get('/get-stages-only', [DashboardStageController::class, 'indexStagesOnly']);
-
+    Route::post('schedule/initialize-weekly', [ScheduleController::class, 'initializeWeekly']);
+    Route::get('schedule/periods', [ScheduleController::class, 'periods']);
 });
