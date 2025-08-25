@@ -255,21 +255,24 @@ class TeacherCallController extends Controller
     public function end(Call $call)
     {
         try {
+            $user = auth()->user();
+            $teacherId = $user?->teacher?->id;
+            if (!$teacherId) {
+                return response()->json(['status' => false, 'message' => __('mobile/teacher/call.errors.not_teacher')], 403);
+            }
+            if ((int) $call->created_by !== (int) $teacherId) {
+                return response()->json(['status' => false, 'message' => __('mobile/teacher/call.errors.not_owner_of_call')], 403);
+            }
             if ($call->ended_at !== null) {
-                return response()->json([
-                    'status' => false,
-                    'message' => __('messages.call_already_ended'),
-                ], 422);
+                return response()->json(['status' => false, 'message' => __('mobile/teacher/call.errors.call_already_ended')], 422);
             }
             DB::transaction(function () use ($call) {
                 $call->update(['ended_at' => now()]);
-                if ($call->relationLoaded('scheduledCall')) {
-                    optional($call->scheduledCall)->delete();
+                $call->loadMissing('scheduledCall');
+                if ($call->scheduledCall) {
+                    $call->scheduledCall->delete();
                 } else {
-                    $scheduled = ScheduledCall::where('call_id', $call->id)->first();
-                    if ($scheduled) {
-                        $scheduled->delete();
-                    }
+                    ScheduledCall::where('call_id', $call->id)->delete();
                 }
             });
             return response()->json([

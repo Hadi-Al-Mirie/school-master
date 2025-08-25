@@ -36,4 +36,8 @@ class Call extends Model
     {
         return $this->hasMany(CallParticipant::class);
     }
+    public function scheduledCall()
+    {
+        return $this->hasOne(ScheduledCall::class, 'call_id', 'id');
+    }
 }
