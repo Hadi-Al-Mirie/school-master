@@ -32,8 +32,10 @@ class StudentCallController extends Controller
                 'message' => __('mobile/student/call.errors.not_student'),
             ], 403);
         }
+        Log::info('call id', [$request->call_id]);
 
         $call = Call::find($request->call_id);
+
 
         if (!$call) {
             return response()->json([
@@ -163,6 +165,7 @@ class StudentCallController extends Controller
                         'name' => optional($s->teacher)->name ?? optional($s->teacher->user)->name ?? null,
                     ],
                     'channel_name' => $s->channel_name,
+                    'call_id' => $s->call->id ?? null,
                     'scheduled_at' => $s->scheduled_at ? $s->scheduled_at->toDateTimeString() : null,
                     'duration_minutes' => (int) $s->duration_minutes,
                     'status' => $s->status,
