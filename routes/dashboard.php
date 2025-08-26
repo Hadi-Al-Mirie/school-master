@@ -48,6 +48,7 @@ Route::prefix('v1/dashboard')->middleware('auth:sanctum')->group(function () {
     Route::get('/semester', [DashboardSemesterController::class, 'index']);
     Route::post('/semester', [DashboardSemesterController::class, 'store']);
     Route::post('/years', [DashboardYearController::class, 'store']);
+    Route::get('/years', [DashboardYearController::class, 'index']);
     Route::post('/events', [DashboardEventsController::class, 'store']);
     Route::get('/get-stages', [DashboardStageController::class, 'index']);
     Route::get('/get-stages-only', [DashboardStageController::class, 'indexStagesOnly']);

@@ -12,7 +12,8 @@ class YearController extends Controller
 
     public function index()
     {
-        return Year::all();
+        $years=Year::all()->select(['id','name','start_date','end_date']);
+        return response()->json(['succes'=>true,'date'=>$years],200);
     }
 
     public function store(Request $request)
