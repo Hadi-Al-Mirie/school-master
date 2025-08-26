@@ -61,7 +61,7 @@ class StudentCallController extends Controller
         }
 
         // Determine participant user id (adjust if your participants store student_id instead)
-        $participantUserId = $student->user_id ?? $student->id;
+        $participantUserId = $student->user_id;
 
         try {
             // Check existing participant
@@ -103,7 +103,7 @@ class StudentCallController extends Controller
                     'success' => true,
                     'message' => __('mobile/student/call.joined'),
                     'data' => [
-                        'user_id' => Auth::id(),
+                        'user_id' => $participantUserId,
                         'user_name' => Auth::user()->email,
                         'call_id' => $call->id,
                         'channel_name' => $call->channel_name,

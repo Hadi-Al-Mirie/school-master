@@ -173,13 +173,13 @@ class TeacherCallController extends Controller
                 ]);
                 $token = null;
                 if (isset($this->zego) && method_exists($this->zego, 'generateToken')) {
-                    $token = $this->zego->generateToken(auth()->id());
+                    $token = $this->zego->generateToken($teacher->user_id);
                 }
                 return response()->json([
                     'status' => true,
                     'message' => __('mobile/teacher/call.started'),
                     'data' => [
-                        'user_id' => Auth::id(),
+                        'user_id' => $teacher->user_id,
                         'user_name' => Auth::user()->email,
                         'call_id' => $call->id,
                         'channel_name' => $call->channel_name,
