@@ -26,6 +26,8 @@ use App\Http\Controllers\Api\V1\Mobile\Student\StudentDictationController;
 use App\Http\Controllers\Api\V1\Mobile\Student\StudentQuizController;
 use App\Http\Controllers\Api\V1\Mobile\Student\StudentHomeController;
 use App\Http\Controllers\Api\V1\Mobile\Student\StudentExamController;
+use App\Http\Controllers\Api\V1\Mobile\Student\StudentQuizSubmissionController;
+use App\Http\Controllers\Api\V1\Mobile\Student\StudentScheduleController;
 
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
     return $request->user();
@@ -64,8 +66,12 @@ Route::group([
         Route::get('dictations', [StudentDictationController::class, 'index']);
         Route::get('quizzes', [StudentQuizController::class, 'index']);
         Route::get('exams', [StudentExamController::class, 'index']);
+        Route::get('quizzes/submittable', [StudentQuizSubmissionController::class, 'submittable']);
+        Route::get('quizzes/{quiz}/questions', [StudentQuizSubmissionController::class, 'questions']);
+        Route::post('quizzes/{quiz}/submit', [StudentQuizSubmissionController::class, 'submit']);
         Route::get('call/scheduled-calls', [StudentCallController::class, 'scheduledCalls']);
         Route::post('call/join', [StudentCallController::class, 'join']);
+        Route::get('schedule/weekly', [StudentScheduleController::class, 'weekly']); // NEW
     });
     Route::group([
         'prefix' => 'v1/mobile/supervisor',

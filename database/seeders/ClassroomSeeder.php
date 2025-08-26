@@ -15,11 +15,10 @@ class ClassroomSeeder extends Seeder
         $supervisorIds = [1, 2];
 
         foreach ($stages as $stage) {
-            foreach ($supervisorIds as $idx => $supId) {
+            for ($i = 1; $i <= 2; $i++) {
                 Classroom::create([
-                    'name' => "{$stage->name} Room " . ($idx + 1),
+                    'name' => "{$stage->name} Room " . ($i + 1),
                     'stage_id' => $stage->id,
-                    'supervisor_id' => $supId,
                 ]);
             }
         }

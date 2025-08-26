@@ -15,4 +15,8 @@ class Stage extends Model
     {
         return $this->hasMany(Student::class);
     }
+    public function supervisors()
+    {
+        return $this->hasMany(Supervisor::class);
+    }
 }

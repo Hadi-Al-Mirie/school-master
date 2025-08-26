@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Dashboard;
+namespace App\Services\Dashboard\Schedule;
 
 use App\Models\TeacherAvailabilities;
 use App\Models\SectionSchedule;
@@ -10,7 +10,7 @@ use App\Models\Period;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
-class WeeklyScheduleService
+class InitWeeklyScheduleService
 {
     /**
      * Replace teacher availabilities per (teacher, day) with provided period_ids.

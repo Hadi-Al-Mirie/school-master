@@ -11,12 +11,6 @@ class Classroom extends Model
     {
         return $this->belongsTo(Stage::class);
     }
-
-    public function supervisor()
-    {
-        return $this->belongsTo(Supervisor::class);
-    }
-
     public function students()
     {
         return $this->hasMany(Student::class);

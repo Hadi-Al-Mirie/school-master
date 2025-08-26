@@ -14,7 +14,6 @@ return new class extends Migration {
             $table->id();
             $table->string('name');
             $table->foreignId('stage_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('supervisor_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
         });
     }
