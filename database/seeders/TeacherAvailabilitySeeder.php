@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\TeacherAvailabilities;
 use Illuminate\Database\Seeder;
-use App\Models\TeacherAvailability;
 use App\Models\Teacher;
 use App\Models\Period;
 

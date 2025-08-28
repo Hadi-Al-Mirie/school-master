@@ -9,7 +9,6 @@ use App\Models\SectionSubject;
 use App\Models\Subject;
 use App\Models\Teacher;
 use App\Models\TeacherAvailabilities;
-use App\Models\TeacherAvailability;
 use App\Models\TeacherSectionSubject;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;

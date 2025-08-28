@@ -107,7 +107,6 @@ class StudentQuizSubmissionService
 
         $now = Carbon::now();
         if (empty($quiz->end_time) || $quiz->end_time->gt($now)) {
-            // per spec: can submit ONLY when end_time <= now
             return ['ok' => false, 'code' => 403, 'message' => __('mobile/student/quiz_submission.errors.not_yet_submittable')];
         }
 
