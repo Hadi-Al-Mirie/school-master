@@ -26,7 +26,7 @@ class SupervisorExamApprovalController extends Controller
             $exams = $this->service->waitingExamsForSupervisorStage();
             return response()->json([
                 'message' => __('mobile/supervisor/exam_approval.messages.waiting_loaded'),
-                'exams'   => $exams,
+                'exams' => $exams,
             ]);
         } catch (\RuntimeException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
@@ -47,15 +47,16 @@ class SupervisorExamApprovalController extends Controller
             $attempts = $this->service->examAttempts($exam, $status);
 
             return response()->json([
-                'message'  => __('mobile/supervisor/exam_approval.messages.attempts_loaded'),
-                'exam_id'  => $exam->id,
+                'success' => true,
+                'message' => __('mobile/supervisor/exam_approval.messages.attempts_loaded'),
+                'exam_id' => $exam->id,
                 'attempts' => $attempts,
             ]);
         } catch (\RuntimeException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
+            return response()->json(['message' => $e->getMessage(), 'success' => false], 422);
         } catch (\Throwable $e) {
             Log::error('Supervisor exam attempts error', ['exam_id' => $exam->id ?? null, 'error' => $e->getMessage()]);
-            return response()->json(['message' => __('mobile/supervisor/exam_approval.messages.server_error')], 500);
+            return response()->json(['message' => __('mobile/supervisor/exam_approval.messages.server_error'),'success' => false], 500);
         }
     }
 
@@ -65,15 +66,15 @@ class SupervisorExamApprovalController extends Controller
     public function finalize(Exam $exam, FinalizeExamResultsRequest $request): JsonResponse
     {
         try {
-            $payload  = $request->validated();
+            $payload = $request->validated();
             $attempts = $payload['attempts'];
 
             $result = $this->service->finalize($exam, $attempts);
 
             return response()->json([
-                'message'  => __('mobile/supervisor/exam_approval.messages.finalized'),
+                'message' => __('mobile/supervisor/exam_approval.messages.finalized'),
                 'approved' => $result['approved'],
-                'exam'     => $result['exam'],
+                'exam' => $result['exam'],
             ]);
         } catch (\RuntimeException $e) {
             return response()->json(['message' => $e->getMessage()], 422);

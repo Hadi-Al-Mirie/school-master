@@ -36,7 +36,6 @@ class ExamApprovalService
                 'subject_id',
                 'semester_id',
                 'max_result',
-                'min_result',
                 'created_by'
             ]);
     }

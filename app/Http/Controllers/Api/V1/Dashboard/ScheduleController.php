@@ -57,8 +57,8 @@ class ScheduleController extends Controller
     public function generate(GenerateScheduleRequest $request)
     {
         $options = [
-            'get_all_schedules' => (bool) $request->input('get_all_schedules', false),
-            'optimize' => (bool) $request->input('optimize', false),
+            'get_all_schedules' => false,
+            'optimize' => true,
             'force_assign' => false,
         ];
 
