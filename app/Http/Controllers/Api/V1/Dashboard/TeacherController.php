@@ -15,7 +15,7 @@ class TeacherController extends Controller
     public function index()
     {
         $teachers = Teacher::with(['user:id,first_name,last_name'])
-            ->get(['id', 'user_id']) // keep user_id only to resolve the relation
+            ->get(['id', 'user_id'])
             ->map(function ($t) {
                 return [
                     'id' => $t->id,
