@@ -22,46 +22,33 @@ class ClassroomService
         if (!$supervisor) {
             throw new \RuntimeException(__('mobile/supervisor/classrooms.errors.supervisor_not_found'));
         }
-        $classrooms = Classroom::where('stage_id', $supervisor->stage_id)
+
+        // Get all classrooms for the supervisor's stage, with their subjects
+        $classrooms = Classroom::with([
+            'subjects' => function ($q) {
+                $q->select('id', 'name', 'amount', 'classroom_id');
+            }
+        ])
+            ->where('stage_id', $supervisor->stage_id)
             ->select('id', 'name')
             ->get();
+
         if ($classrooms->isEmpty()) {
             return [];
         }
-        $classroomIds = $classrooms->pluck('id')->all();
-        $rows = DB::table('sections')
-            ->join('section_subjects', 'section_subjects.section_id', '=', 'sections.id')
-            ->join('subjects', 'subjects.id', '=', 'section_subjects.subject_id')
-            ->whereIn('sections.classroom_id', $classroomIds)
-            ->distinct()
-            ->select([
-                'sections.classroom_id',
-                'subjects.id as subject_id',
-                'subjects.name as subject_name',
-                'subjects.amount as subject_amount',
-            ])->get();
 
-        // Group rows by classroom_id
-        $byClassroom = [];
-        foreach ($rows as $r) {
-            $byClassroom[$r->classroom_id][] = [
-                'id' => (int) $r->subject_id,
-                'name' => (string) $r->subject_name,
-                'amount' => $r->subject_amount !== null ? (int) $r->subject_amount : null,
-            ];
-        }
-
-        // 3) Build response array, empty subjects if none found
-        $result = [];
-        foreach ($classrooms as $c) {
-            $subjects = $byClassroom[$c->id] ?? [];
-            $result[] = [
+        return $classrooms->map(function ($c) {
+            return [
                 'id' => (int) $c->id,
                 'name' => (string) $c->name,
-                'subjects' => $subjects,
+                'subjects' => $c->subjects->map(function ($s) {
+                    return [
+                        'id' => (int) $s->id,
+                        'name' => (string) $s->name,
+                        'amount' => $s->amount !== null ? (int) $s->amount : null,
+                    ];
+                })->values()->all(),
             ];
-        }
-
-        return $result;
+        })->values()->all();
     }
 }
