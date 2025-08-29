@@ -20,12 +20,12 @@ class ScheduleSeeder extends Seeder
 {
     public function run(): void
     {
-        // ---------- Periods: 8 per day ----------
-        if (Period::count() < 8) {
-            $base = Carbon::createFromTime(8, 0, 0); // 08:00
-            for ($i = 1; $i <= 8; $i++) {
-                $start = (clone $base)->addHours($i - 1); // 08:00, 09:00, ...
-                $end = (clone $start)->addHour();       // +1h
+        // ---- Periods: 4 per day (08:00–12:00) ----
+        if (Period::count() < 4) {
+            $base = Carbon::createFromTime(8, 0, 0);
+            for ($i = 1; $i <= 4; $i++) {
+                $start = (clone $base)->addHours($i - 1);
+                $end = (clone $start)->addHour();
                 Period::firstOrCreate(['id' => $i], [
                     'name' => 'P' . $i,
                     'order' => $i,
@@ -37,20 +37,26 @@ class ScheduleSeeder extends Seeder
             }
         }
 
-        // ---------- 3 stages, 5 classrooms each ----------
-        $stageNames = ['Stage 1', 'Stage 2', 'Stage 3'];
-        $sectionNames = ['A', 'B', 'C'];
+        // ---- 2 stages × 2 classrooms each ----
+        $stageNames = ['Stage A', 'Stage B'];
+        $sectionNames = ['A', 'B'];
+        $subjectsDef = [
+            ['name' => 'Math', 'amount' => 3],
+            ['name' => 'Science', 'amount' => 3],
+            ['name' => 'Arabic', 'amount' => 2],
+        ];
+        // Per section: 3+3+2 = 8 weekly lessons. With our init (2 days × 4 periods) -> 8 slots/section -> tight fit.
 
         foreach ($stageNames as $si => $sname) {
             $stage = Stage::firstOrCreate(['name' => $sname]);
 
-            for ($cj = 1; $cj <= 5; $cj++) {
+            for ($cj = 1; $cj <= 2; $cj++) {
                 $classroom = Classroom::firstOrCreate(
-                    ['name' => "S" . ($si + 1) . "-C" . $cj, 'stage_id' => $stage->id],
+                    ['name' => "S" . ($si + 1) . "-C{$cj}", 'stage_id' => $stage->id],
                     ['created_at' => now(), 'updated_at' => now()]
                 );
 
-                // 3 sections: A, B, C
+                // Sections A & B
                 $sections = [];
                 foreach ($sectionNames as $secName) {
                     $sections[] = Section::firstOrCreate(
@@ -59,33 +65,27 @@ class ScheduleSeeder extends Seeder
                     );
                 }
 
-                // 8 subjects per classroom (amount 2..5)
-                for ($k = 1; $k <= 8; $k++) {
-                    $amount = rand(2, 5); // weekly periods per section
-                    $subjName = "Sub-S" . ($si + 1) . "-C{$cj}-#{$k}";
+                // 3 subjects per classroom; 1 teacher per subject; same teacher teaches both sections
+                foreach ($subjectsDef as $k => $def) {
                     $subject = Subject::firstOrCreate(
-                        ['name' => $subjName, 'classroom_id' => $classroom->id],
-                        ['amount' => $amount]
+                        ['name' => $def['name'], 'classroom_id' => $classroom->id],
+                        ['amount' => $def['amount']]
                     );
 
-                    // 1 teacher per (classroom, subject)
-                    $email = "t_s" . ($si + 1) . "_c{$cj}_{$k}@example.com";
+                    $email = "t_s" . ($si + 1) . "_c{$cj}_" . strtolower($def['name']) . "@example.com";
                     $user = User::firstOrCreate(
                         ['email' => $email],
                         [
-                            'first_name' => "T" . ($si + 1) . $cj . $k,
-                            'last_name' => 'Teacher',
+                            'first_name' => $def['name'] . 'T',
+                            'last_name' => "S" . ($si + 1) . "C{$cj}",
                             'role_id' => 2,
                             'password' => Hash::make('password'),
                             'remember_token' => Str::random(10),
                         ]
                     );
-                    $teacher = Teacher::firstOrCreate(
-                        ['user_id' => $user->id],
-                        ['phone' => '0987654321']
-                    );
+                    $teacher = Teacher::firstOrCreate(['user_id' => $user->id], ['phone' => '0987654321']);
 
-                    // The same teacher teaches this subject to all 3 sections
+                    // Assign subject to both sections with this teacher
                     foreach ($sections as $sec) {
                         SectionSubject::firstOrCreate([
                             'section_id' => $sec->id,

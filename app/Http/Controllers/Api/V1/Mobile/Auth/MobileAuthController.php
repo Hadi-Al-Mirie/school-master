@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Mobile\Auth\LoginRequest;
 use Illuminate\Http\JsonResponse;
 use Exception;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 
@@ -24,7 +25,7 @@ class MobileAuthController extends Controller
 
             $user = Auth::user();
 
-            if (!$user->hasVerifiedEmail() || !$user) {
+            if (!$user) {
                 return response()->json([
                     'message' => __('mobile/auth/auth.email_not_verified'),
                 ], 403);
@@ -55,5 +56,21 @@ class MobileAuthController extends Controller
                 'message' => __('mobile/auth/auth.server_error'),
             ], 500);
         }
+    }
+
+
+    public function logout(Request $request)
+    {
+        $user = $request->user();
+        $token = $user->currentAccessToken();
+        if ($token) {
+            $token->delete();
+        }
+        if ($request->hasSession()) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
+        return response()->json(['message' => 'Logged out'], 200);
     }
 }

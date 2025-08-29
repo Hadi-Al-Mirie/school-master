@@ -38,6 +38,7 @@ Route::group([
 ], function () {
     Route::post('v1/mobile/login', [MobileAuthController::class, 'login'])
         ->name('login');
+
     Route::group([
         'prefix' => 'v1/mobile/teacher',
         'middleware' => ['auth:sanctum', 'IsTeacher', 'EnsureActiveSemesterExist'],
