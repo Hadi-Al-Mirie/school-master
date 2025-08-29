@@ -48,7 +48,6 @@ class ExamApprovalService
         return ExamAttempt::query()
             ->with(['student:id,user_id,section_id', 'student.user:id,first_name,last_name'])
             ->where('exam_id', $exam->id)
-            ->when($status !== 'all', fn($q) => $q->where('status', $status))
             ->orderBy('id')
             ->get(['id', 'exam_id', 'student_id', 'result', 'status', 'created_at']);
     }
