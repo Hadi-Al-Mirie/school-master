@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-
+use Illuminate\Support\Facades\DB;
 class Teacher extends Model
 {
     protected $fillable = ['user_id', 'phone'];
@@ -18,7 +18,6 @@ class Teacher extends Model
 
     public function subjects()
     {
-        // Option A: via hasManyThrough
         return $this->hasManyThrough(
             Subject::class,
             SectionSubject::class,
@@ -27,6 +26,10 @@ class Teacher extends Model
             'id',
             'subject_id'
         );
+    }
+    public function availabilities()
+    {
+        return $this->hasMany(TeacherAvailabilities::class, 'teacher_id');
     }
     /**
      * Get all Sections this teacher actually teaches (unique).
@@ -45,5 +48,13 @@ class Teacher extends Model
     public function teacherPopularities()
     {
         return $this->hasMany(TeacherPopularity::class);
+    }
+
+    public function minRequiredAvailabilities(): int
+    {
+        return (int) DB::table('section_subjects')
+            ->join('subjects', 'subjects.id', '=', 'section_subjects.subject_id')
+            ->where('section_subjects.teacher_id', $this->id)
+            ->sum('subjects.amount');
     }
 }

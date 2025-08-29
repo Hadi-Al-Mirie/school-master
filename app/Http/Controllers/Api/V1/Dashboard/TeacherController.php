@@ -14,9 +14,22 @@ class TeacherController extends Controller
 {
     public function index()
     {
-        $teachers = Teacher::all();
+        $teachers = Teacher::with(['user:id,first_name,last_name'])
+            ->get(['id', 'user_id']) // keep user_id only to resolve the relation
+            ->map(function ($t) {
+                return [
+                    'id' => $t->id,
+                    'user' => [
+                        'first_name' => $t->user?->first_name,
+                        'last_name' => $t->user?->last_name,
+                    ],
+                    'min_av' => $t->minRequiredAvailabilities()
+                ];
+            });
+
         return response()->json($teachers, 200);
     }
+
     public function store(StoreTeacherRequest $request)
     {
         $validated = $request;

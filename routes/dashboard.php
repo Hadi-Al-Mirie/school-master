@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\V1\Dashboard\YearController as DashboardYearControl
 use App\Http\Controllers\Api\V1\Dashboard\EventsController as DashboardEventsController;
 use App\Http\Controllers\Api\V1\Dashboard\StageController as DashboardStageController;
 use App\Http\Controllers\Api\V1\Dashboard\ScheduleController;
+use App\Http\Controllers\Api\V1\Dashboard\ClassroomController;
 
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
     return $request->user();
@@ -41,6 +42,7 @@ Route::group([
 
 Route::prefix('v1/dashboard')->middleware('auth:sanctum')->group(function () {
     Route::get('/home', [DashboardHomeController::class, 'index']);
+    Route::get('/classrooms', [ClassroomController::class, 'index']);
     Route::apiResource('/student', StudentController::class);
     Route::apiResource('/teacher', TeacherController::class);
     Route::apiResource('/supervisor', SupervisorController::class);

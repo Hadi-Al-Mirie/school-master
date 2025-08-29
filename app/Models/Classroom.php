@@ -19,4 +19,14 @@ class Classroom extends Model
     {
         return $this->hasMany(Section::class);
     }
+
+    public function subjects()
+    {
+        return $this->hasMany(Subject::class);
+    }
+
+    public function minRequiredSectionSubjects(): int
+    {
+        return (int) $this->subjects()->sum('amount');
+    }
 }
