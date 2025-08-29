@@ -19,10 +19,8 @@ class TeacherController extends Controller
             ->map(function ($t) {
                 return [
                     'id' => $t->id,
-                    'user' => [
-                        'first_name' => $t->user?->first_name,
-                        'last_name' => $t->user?->last_name,
-                    ],
+                    'first_name' => $t->user?->first_name,
+                    'last_name' => $t->user?->last_name,
                     'min_av' => $t->minRequiredAvailabilities()
                 ];
             });
