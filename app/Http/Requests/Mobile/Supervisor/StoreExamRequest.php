@@ -8,6 +8,7 @@ use App\Models\Classroom;
 use App\Models\Semester;
 use App\Models\Subject;
 use App\Models\Supervisor;
+use Illuminate\Support\Facades\Log;
 
 class StoreExamRequest extends FormRequest
 {
@@ -48,6 +49,46 @@ class StoreExamRequest extends FormRequest
             'name.max' => __('mobile/supervisor/exam.validation.name.max'),
             'name.min' => __('mobile/supervisor/exam.validation.name.min'),
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $classroomId = $this->input('classroom_id');
+        $subjectId = $this->input('subject_id');
+
+        Log::info('StoreExamRequest: incoming payload (pre-validation)', [
+            'user_id' => optional($this->user())->id,
+            'classroom_id' => $classroomId,
+            'subject_id' => $subjectId,
+            'max_result' => $this->input('max_result'),
+            'name' => $this->input('name'),
+        ]);
+
+        if ($this->has('classroom_id')) {
+            $classroom = Classroom::select('id', 'name', 'stage_id')->find($classroomId);
+            Log::info('StoreExamRequest: classroom pre-validation', [
+                'input_classroom_id' => $classroomId,
+                'found' => (bool) $classroom,
+                'classroom' => $classroom ? [
+                    'id' => $classroom->id,
+                    'name' => $classroom->name ?? null,
+                    'stage_id' => $classroom->stage_id,
+                ] : null,
+            ]);
+        }
+
+        if ($this->has('subject_id')) {
+            $subject = Subject::select('id', 'name', 'classroom_id')->find($subjectId);
+            Log::info('StoreExamRequest: subject pre-validation', [
+                'input_subject_id' => $subjectId,
+                'found' => (bool) $subject,
+                'subject' => $subject ? [
+                    'id' => $subject->id,
+                    'name' => $subject->name ?? null,
+                    'classroom_id' => $subject->classroom_id,
+                ] : null,
+            ]);
+        }
     }
 
     public function withValidator($validator)

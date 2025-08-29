@@ -12,7 +12,7 @@ class SupervisorSeeder extends Seeder
     public function run()
     {
         // Example: create 2 supervisors
-        for ($i = 1; $i <= 3; $i++) {
+        for ($i = 1; $i <= 1; $i++) {
             $user = User::create([
                 'first_name' => "SupervisorFirst{$i}",
                 'last_name' => "SupervisorLast{$i}",

@@ -6,7 +6,10 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 use App\Models\Period;
-
+use App\Models\Teacher;
+use App\Models\Classroom;
+use App\Models\Section;
+use Illuminate\Support\Facades\DB;
 class InitializeWeeklyScheduleRequest extends FormRequest
 {
     public function authorize(): bool
@@ -82,11 +85,10 @@ class InitializeWeeklyScheduleRequest extends FormRequest
         ];
     }
 
-    public function withValidator(\Illuminate\Validation\Validator $validator): void
+    public function withValidator(Validator $validator): void
     {
         $validator->after(function ($v) {
-            // Max periods/day check (you already have this)
-            $totalPeriods = \App\Models\Period::count();
+            $totalPeriods = Period::count();
             $classrooms = $this->input('classrooms', []);
             foreach ($classrooms as $idx => $c) {
                 $ppd = $c['periods_per_day'] ?? [];
@@ -99,8 +101,6 @@ class InitializeWeeklyScheduleRequest extends FormRequest
                     }
                 }
             }
-
-            // Ensure no duplicate (teacher_id, day_of_week) rows in the same payload
             $tas = $this->input('teacher_availabilities', []);
             $seenTeacherDay = [];
             foreach ($tas as $i => $row) {
@@ -116,13 +116,82 @@ class InitializeWeeklyScheduleRequest extends FormRequest
                     }
                     $seenTeacherDay[$key] = true;
                 }
-
-                // Enforce uniqueness WITHIN EACH period_ids list only
                 $pids = $row['period_ids'] ?? [];
                 if (is_array($pids) && count($pids) !== count(array_unique($pids))) {
                     $v->errors()->add(
                         "teacher_availabilities.$i.period_ids",
                         __('dashboard/schedule/initialize/validation.period_ids.duplicate_within')
+                    );
+                }
+            }
+            $tas = collect($this->input('teacher_availabilities', []));
+            $providedTeacherIds = $tas->pluck('teacher_id')->filter()->unique();
+            $allTeacherIds = Teacher::pluck('id');
+            $missingTeachers = $allTeacherIds->diff($providedTeacherIds);
+
+            if ($missingTeachers->isNotEmpty()) {
+                $v->errors()->add(
+                    'teacher_availabilities',
+                    'You must include availabilities for ALL teachers. Missing teacher IDs: ' . $missingTeachers->implode(', ')
+                );
+            }
+
+            // ---------- Each teacher has >= minRequiredAvailabilities() ----------
+            // count total provided slots per teacher across all days (unique period_ids per row already enforced above)
+            $slotsByTeacher = $tas->groupBy('teacher_id')->map(function ($rows) {
+                return $rows->sum(function ($r) {
+                    $pids = $r['period_ids'] ?? [];
+                    return is_array($pids) ? count(array_unique($pids)) : 0;
+                });
+            });
+
+            foreach (Teacher::all() as $t) {
+                $given = (int) ($slotsByTeacher->get($t->id, 0));
+                $required = (int) $t->minRequiredAvailabilities(); // you added this method on Teacher
+                if ($given < $required) {
+                    $v->errors()->add(
+                        'teacher_availabilities',
+                        "Teacher {$t->id} requires at least {$required} availability slots; only {$given} provided."
+                    );
+                }
+            }
+
+            // ---------- Ensure ALL classrooms are provided ----------
+            $classroomsInput = collect($this->input('classrooms', []));
+            $providedClassroomIds = $classroomsInput->pluck('classroom_id')->filter()->unique();
+            $allClassroomIds = Classroom::pluck('id');
+            $missingClassrooms = $allClassroomIds->diff($providedClassroomIds);
+
+            if ($missingClassrooms->isNotEmpty()) {
+                $v->errors()->add(
+                    'classrooms',
+                    'You must include configuration for ALL classrooms. Missing classroom IDs: ' . $missingClassrooms->implode(', ')
+                );
+            }
+
+            // ---------- Each classroom has enough total weekly empty slots ----------
+            // Total weekly empty slots created by initialize = (#sections in classroom) * (sum of periods_per_day for that classroom)
+            $sectionsCountByClassroom = Section::select('classroom_id', DB::raw('COUNT(*) as cnt'))
+                ->groupBy('classroom_id')
+                ->pluck('cnt', 'classroom_id');
+
+            foreach ($classroomsInput as $idx => $cfg) {
+                $cid = (int) ($cfg['classroom_id'] ?? 0);
+                $ppd = $cfg['periods_per_day'] ?? [];
+                $sumPerDay = collect($ppd)->sum(function ($n) {
+                    return is_numeric($n) ? (int) $n : 0;
+                });
+
+                $sectionsCount = (int) ($sectionsCountByClassroom[$cid] ?? 0);
+                $totalWeeklySlots = $sectionsCount * $sumPerDay;
+
+                // You added this method on Classroom earlier
+                $required = (int) (Classroom::find($cid)?->minRequiredSectionSubjects() ?? 0);
+
+                if ($totalWeeklySlots < $required) {
+                    $v->errors()->add(
+                        "classrooms.$idx.periods_per_day",
+                        "Not enough schedule slots for classroom {$cid}. Required at least {$required} total weekly slots across its sections; provided {$totalWeeklySlots}."
                     );
                 }
             }
