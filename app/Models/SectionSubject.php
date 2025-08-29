@@ -11,7 +11,7 @@ class SectionSubject extends Model
         'subject_id',
         'teacher_id'
     ];
-public function section()
+    public function section()
     {
         return $this->belongsTo(Section::class);
     }
@@ -24,5 +24,14 @@ public function section()
     public function teacher()
     {
         return $this->belongsTo(Teacher::class);
+    }
+    public function teachers()
+    {
+        return $this->belongsToMany(
+            Teacher::class,
+            'section_subjects',
+            'subject_id',
+            'teacher_id'
+        )->withTimestamps();
     }
 }

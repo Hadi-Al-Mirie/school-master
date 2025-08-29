@@ -42,7 +42,7 @@ class SearchController extends Controller
                                     'last_name' => $t->user->last_name ?? null,
                                     'email' => $t->user->email ?? null,
                                 ],
-                                'phone' => $t->phone,
+                                'phone_number' => $t->phone,
                             ];
                         })
                         ->values();

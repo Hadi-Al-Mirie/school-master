@@ -69,7 +69,7 @@ class ConstraintChecker
     public function teacherCanTeach(int $teacherId, int $sectionSubjectId): bool
     {
         return SectionSubject::where('teacher_id', $teacherId)
-            ->where('section_subject_id', $sectionSubjectId)
+            ->where('subject_id', $sectionSubjectId)
             ->exists();
     }
 
