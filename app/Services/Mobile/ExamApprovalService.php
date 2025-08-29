@@ -104,7 +104,6 @@ class ExamApprovalService
 
         // Apply edited results (but do not save yet)
         $max = (float) ($exam->max_result ?? 100);
-        $min = (float) ($exam->min_result ?? 0);
 
         foreach ($attempts as $row) {
             $val = (float) $row['result'];
