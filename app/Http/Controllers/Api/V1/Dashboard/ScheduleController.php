@@ -54,7 +54,7 @@ class ScheduleController extends Controller
     }
 
 
-    public function generate(GenerateScheduleRequest $request)
+    public function generate()
     {
         $options = [
             'get_all_schedules' => false,

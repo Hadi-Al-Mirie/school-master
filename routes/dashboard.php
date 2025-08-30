@@ -56,7 +56,7 @@ Route::prefix('v1/dashboard')->middleware('auth:sanctum')->group(function () {
     Route::get('/get-stages-only', [DashboardStageController::class, 'indexStagesOnly']);
     Route::post('schedule/initialize-weekly', [ScheduleController::class, 'initializeWeekly']);
     Route::get('schedule/periods', [ScheduleController::class, 'periods']);
-    Route::post('schedule/generate', [ScheduleController::class, 'generate']);
+    Route::get('schedule/generate', [ScheduleController::class, 'generate']);
     Route::post('schedule/reset', [ScheduleController::class, 'reset']);
     Route::get('schedule/status', [ScheduleController::class, 'status']);
     Route::get('schedule/export', [ScheduleController::class, 'export']);

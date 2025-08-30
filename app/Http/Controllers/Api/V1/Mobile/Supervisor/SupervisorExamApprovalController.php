@@ -56,7 +56,7 @@ class SupervisorExamApprovalController extends Controller
             return response()->json(['message' => $e->getMessage(), 'success' => false], 422);
         } catch (\Throwable $e) {
             Log::error('Supervisor exam attempts error', ['exam_id' => $exam->id ?? null, 'error' => $e->getMessage()]);
-            return response()->json(['message' => __('mobile/supervisor/exam_approval.messages.server_error'),'success' => false], 500);
+            return response()->json(['message' => __('mobile/supervisor/exam_approval.messages.server_error'), 'success' => false], 500);
         }
     }
 
@@ -72,15 +72,16 @@ class SupervisorExamApprovalController extends Controller
             $result = $this->service->finalize($exam, $attempts);
 
             return response()->json([
+                'success' => true,
                 'message' => __('mobile/supervisor/exam_approval.messages.finalized'),
                 'approved' => $result['approved'],
                 'exam' => $result['exam'],
             ]);
         } catch (\RuntimeException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
+            return response()->json(['message' => $e->getMessage(), 'success' => false], 422);
         } catch (\Throwable $e) {
             Log::error('Supervisor finalize exam error', ['exam_id' => $exam->id ?? null, 'error' => $e->getMessage()]);
-            return response()->json(['message' => __('mobile/supervisor/exam_approval.messages.server_error')], 500);
+            return response()->json(['success' => false, 'message' => __('mobile/supervisor/exam_approval.messages.server_error')], 500);
         }
     }
 }

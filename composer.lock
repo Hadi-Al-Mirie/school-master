@@ -1338,8 +1338,8 @@
             },
             "dist": {
                 "type": "zip",
-                "reference": "fd6df4f79f48a72992e8d29a9c0ee25422a0d677",
                 "url": "https://api.github.com/repos/laravel/sanctum/zipball/fd6df4f79f48a72992e8d29a9c0ee25422a0d677",
+                "reference": "fd6df4f79f48a72992e8d29a9c0ee25422a0d677",
                 "shasum": ""
             },
             "require": {

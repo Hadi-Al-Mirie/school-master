@@ -18,6 +18,7 @@ class CreateNoteRequest extends FormRequest
             'student_id' => 'required|exists:students,id',
             'type' => 'required|string|in:positive,negative',
             'reason' => 'required|string|min:4|max:255',
+            'value' => 'required|numeric|min:1|max:100'
         ];
     }
 
@@ -33,6 +34,10 @@ class CreateNoteRequest extends FormRequest
             'reason.string' => __('mobile/teacher/notes.reason_string'),
             'reason.max' => __('mobile/teacher/notes.reason_max'),
             'reason.min' => __('mobile/teacher/notes.reason_min'),
+            'value.required' => __('mobile/supervisor/notes.validation.value_required'),
+            'value.numeric' => __('mobile/supervisor/notes.validation.value_numeric'),
+            'value.min' => __('mobile/supervisor/notes.validation.value_min'),
+            'value.max' => __('mobile/supervisor/notes.validation.value_max'),
         ];
     }
 }

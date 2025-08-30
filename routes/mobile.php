@@ -80,8 +80,6 @@ Route::group([
     ], function () {
         Route::get('students', [SupervisorStudentsController::class, 'index']);
         Route::post('notes/create', [SupervisorNoteController::class, 'store']);
-        Route::get('notes/stage', [SupervisorNoteApprovalController::class, 'index']);
-        Route::post('notes/{note}/decision', [SupervisorNoteApprovalController::class, 'decide']);
         Route::post('attendance/register', [SupervisorAttendanceController::class, 'store']);
         Route::post('exams/create', [SupervisorExamController::class, 'store']);
         Route::get('exams/waiting', [SupervisorExamApprovalController::class, 'waiting']);

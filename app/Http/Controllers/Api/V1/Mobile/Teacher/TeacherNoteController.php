@@ -17,11 +17,15 @@ class TeacherNoteController extends Controller
         try {
             $teacherUserId = Auth::id();
             $semester = Semester::where('is_active', true)->firstOrFail();
+            $raw = (float) $request->value;
+            $value = $request->type === 'positive' ? abs($raw) : -abs($raw);
             $note = Note::create([
                 'student_id' => $request->student_id,
                 'semester_id' => $semester->id,
                 'by_id' => $teacherUserId,
                 'type' => $request->type,
+                'status'=>'approved',
+                'value'=>$value,
                 'reason' => $request->reason,
             ]);
             return response()->json([
