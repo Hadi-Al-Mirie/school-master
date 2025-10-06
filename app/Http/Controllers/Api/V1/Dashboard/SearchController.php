@@ -90,7 +90,6 @@ class SearchController extends Controller
 
                 case 'supervisor':
                     $results = Supervisor::query()
-                        // Constrain + eager-load in one go (Laravel 9+)
                         ->withWhereHas('user', function ($u) use ($q) {
                             $u->where(function ($uu) use ($q) {
                                 $uu->where('first_name', 'like', "%{$q}%")
@@ -98,14 +97,13 @@ class SearchController extends Controller
                                     ->orWhere('email', 'like', "%{$q}%");
                             });
                         })
-                        // If the input looks like an email, also do an exact match to be safe
                         ->when(str_contains($q, '@'), function ($query) use ($q) {
                             $query->orWhereHas('user', function ($u) use ($q) {
                                 $u->whereRaw('LOWER(email) = ?', [strtolower($q)]);
                             });
                         })
                         ->orderByDesc('id')
-                        ->with(['user:id,first_name,last_name,email']) // ensure user is returned
+                        ->with(['user:id,first_name,last_name,email'])
                         ->get()
                         ->map(function ($sp) {
                             return [

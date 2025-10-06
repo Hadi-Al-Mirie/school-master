@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\V1\Mobile\Teacher;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Mobile\Teacher\CreateCallRequest;
 use App\Models\Call;
 use App\Services\Mobile\ZegoService;
 use Illuminate\Support\Facades\DB;
@@ -69,7 +68,7 @@ class TeacherCallController extends Controller
         }
         $activeOverlap = Call::where('created_by', $teacher->id)
             ->where(function ($q) use ($newStart, $newEnd) {
-                $q->whereNull('ended_at')   // currently ongoing
+                $q->whereNull('ended_at')
                     ->where('started_at', '<', $newEnd);
             })
             ->exists();
@@ -214,10 +213,8 @@ class TeacherCallController extends Controller
             $now = Carbon::now();
             $query = ScheduledCall::query()
                 ->where('created_by', $teacher->id)
-                // ->where('status', 'scheduled')
                 ->with(['section', 'subject'])
                 ->orderBy('scheduled_at', 'asc');
-            // $query->where('scheduled_at', '>=', $now);
             $scheduled = $query->get()->map(function (ScheduledCall $s) {
                 return [
                     'id' => $s->id,
@@ -237,7 +234,6 @@ class TeacherCallController extends Controller
                     'created_at' => $s->created_at->toDateTimeString(),
                 ];
             })->values();
-
             return response()->json([
                 'success' => true,
                 'data' => $scheduled,
@@ -254,9 +250,6 @@ class TeacherCallController extends Controller
         }
     }
 
-    /**
-     * Teacher ends a call.
-     */
     public function end(Call $call)
     {
         try {

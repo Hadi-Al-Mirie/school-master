@@ -6,18 +6,10 @@ use App\Models\Note;
 use App\Models\Semester;
 use App\Models\Student;
 use App\Models\Year;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class StudentNoteService
 {
-    /**
-     * List student's notes for the current active year with aggregates (no pagination).
-     *
-     * @param  int   $userId
-     * @param  array $filters [status,type,sort,semester_id]
-     * @return array{ok:bool,message:string,data?:array}
-     */
     public function index(int $userId, array $filters = []): array
     {
         $student = Student::with('user:id,first_name,last_name')
@@ -32,10 +24,7 @@ class StudentNoteService
         if (!$activeYear) {
             return ['ok' => false, 'message' => __('mobile/student/notes.errors.active_year_not_found')];
         }
-
         $semesterIds = Semester::where('year_id', $activeYear->id)->pluck('id');
-
-        // Base query scoped to active year
         $q = Note::query()
             ->with([
                 'createdBy:id,first_name,last_name,email',
@@ -43,8 +32,6 @@ class StudentNoteService
             ])
             ->where('student_id', $student->id)
             ->whereIn('semester_id', $semesterIds);
-
-        // Filters
         if (!empty($filters['status'])) {
             $q->where('status', $filters['status']);
         }
@@ -54,8 +41,6 @@ class StudentNoteService
         if (!empty($filters['semester_id']) && $semesterIds->contains((int) $filters['semester_id'])) {
             $q->where('semester_id', (int) $filters['semester_id']);
         }
-
-        // Sorting
         switch ($filters['sort'] ?? 'newest') {
             case 'oldest':
                 $q->orderBy('created_at', 'asc');
@@ -69,21 +54,14 @@ class StudentNoteService
             default:
                 $q->orderByDesc('created_at');
         }
-
-        /** @var Collection<int, Note> $notes */
         $notes = $q->get();
-
-        // Aggregates across active year (approved only)
         $approved = Note::where('student_id', $student->id)
             ->whereIn('semester_id', $semesterIds)
             ->where('status', 'approved');
-
         $positivePoints = (clone $approved)->where('type', 'positive')->sum(DB::raw('COALESCE(value,0)'));
         $negativePoints = (clone $approved)->where('type', 'negative')->sum(DB::raw('COALESCE(value,0)'));
         $positiveCount = (int) (clone $approved)->where('type', 'positive')->count();
         $negativeCount = (int) (clone $approved)->where('type', 'negative')->count();
-
-        // Transform items
         $items = $notes->map(function (Note $n) {
             return [
                 'id' => $n->id,

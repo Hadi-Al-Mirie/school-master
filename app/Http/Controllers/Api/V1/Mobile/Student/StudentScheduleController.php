@@ -14,7 +14,6 @@ class StudentScheduleController extends Controller
     {
     }
 
-    // GET /v1/mobile/student/schedule/weekly
     public function weekly(): JsonResponse
     {
         try {
@@ -25,14 +24,14 @@ class StudentScheduleController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => $res['message'],
-                    'data'    => [],
+                    'data' => [],
                 ], 404);
             }
 
             return response()->json([
                 'success' => true,
                 'message' => __('mobile/student/schedule.success.loaded'),
-                'data'    => $res['data'],
+                'data' => $res['data'],
             ]);
         } catch (Throwable $e) {
             report($e);

@@ -20,8 +20,6 @@ class StudentScheduleService
         if (!$student->section_id) {
             return ['ok' => false, 'message' => __('mobile/student/schedule.errors.no_section')];
         }
-
-        // Your enum (from migrations): ['saturday','sunday','monday','tuesday','wednesday','thursday']
         $dayOrder = [
             'saturday' => 1,
             'sunday' => 2,
@@ -38,8 +36,6 @@ class StudentScheduleService
             'wednesday' => __('mobile/student/schedule.days.wednesday'),
             'thursday' => __('mobile/student/schedule.days.thursday'),
         ];
-
-        // Pull all schedules for the student's section
         $rows = SectionSchedule::query()
             ->where('section_schedules.section_id', $student->section_id)
             ->leftJoin('periods', 'periods.id', '=', 'section_schedules.period_id')
@@ -51,7 +47,6 @@ class StudentScheduleService
                 'section_schedules.day_of_week',
                 'periods.id as period_id',
                 'periods.name as period_name',
-                // ✅ correct way to select reserved column
                 DB::raw('periods.`order` as period_order'),
                 'periods.start_time',
                 'periods.end_time',
@@ -64,7 +59,6 @@ class StudentScheduleService
             ->get()
             ->map(function ($r) use ($dayOrder) {
                 $dayKey = strtolower($r->day_of_week);
-
                 return [
                     'day_key' => $dayKey,
                     'day_order' => $dayOrder[$dayKey] ?? 99,
@@ -84,12 +78,8 @@ class StudentScheduleService
                     ] : null,
                 ];
             });
-
-        // Group by day and sort by period_order then start_time
         $grouped = $rows->groupBy('day_key');
-
         $orderedDays = ['saturday', 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday'];
-
         $week = [];
         foreach ($orderedDays as $key) {
             $items = ($grouped[$key] ?? collect())
@@ -97,7 +87,6 @@ class StudentScheduleService
                     ['period.order', 'asc'],
                     ['period.start_time', 'asc'],
                 ])->values();
-
             $week[] = [
                 'day' => $key,
                 'label' => $dayLabels[$key] ?? ucfirst($key),
@@ -105,7 +94,6 @@ class StudentScheduleService
                 'items' => $items,
             ];
         }
-
         return [
             'ok' => true,
             'message' => __('mobile/student/schedule.success.loaded'),

@@ -24,11 +24,11 @@ class ScheduleGeneratorService
         'message' => 'Ready to generate schedule',
         'errors' => [],
     ];
-    protected array $teacherSlotList = []; // [teacher_id] => ["day|period", ...]
-    protected array $teacherSlotSet = []; // [teacher_id]["day|period"] => true
+    protected array $teacherSlotList = [];
+    protected array $teacherSlotSet = [];
 
-    protected array $sectionSlotList = []; // [section_id] => ["day|period", ...]
-    protected array $sectionSlotSet = []; // [section_id]["day|period"] => true
+    protected array $sectionSlotList = [];
+    protected array $sectionSlotSet = [];
 
     /**
      * Create a new service instance.
@@ -56,41 +56,27 @@ class ScheduleGeneratorService
             if (function_exists('set_time_limit')) {
                 @set_time_limit(120);
             }
-            // Avoid memory/time from query log during big runs
             try {
                 DB::connection()->disableQueryLog();
             } catch (\Throwable $e) {
             }
-
             $getAllSchedules = $options['get_all_schedules'] ?? false;
             $optimizeSchedule = $options['optimize'] ?? false;
-
             $this->updateStatus('running', 0, 'Starting schedule generation');
             DB::beginTransaction();
-
-            // 1) Load data (keep your eager loads)
             $sections = $this->loadSections();
             $periods = $this->loadPeriods();
             $teacherAvailabilities = $this->loadTeacherAvailabilities();
             $sectionSubjects = $this->loadSectionSubjects();
             $sectionSchedules = $this->loadSectionSchedules();
-
-            // 1a) Build fast in-memory indexes (NEW)
             $this->buildTeacherIndexes($teacherAvailabilities);
             $this->buildSectionIndexes($sectionSchedules);
-
-            // 2) Reset
             $this->resetSchedules();
             $this->updateStatus('running', 5, 'Schedules cleared');
-
-            // 3) Explode & sort (use precomputed counts instead of Collection math)
             $demands = $this->explodeSectionSubjectsByAmount($sectionSubjects);
             $sortedDemands = $this->sortByConstraintDifficultyFast($demands);
             $this->updateStatus('running', 10, 'Demands prepared for scheduling');
-
-            // 4) Generate schedule based on manager's choice
             if ($getAllSchedules) {
-                // Generate all valid schedules using backtracking
                 $this->updateStatus('running', 15, 'Generating all valid schedules');
                 $allSchedules = [];
                 $this->backtrack(
@@ -105,13 +91,11 @@ class ScheduleGeneratorService
                 );
 
                 if (empty($allSchedules)) {
-                    // No valid schedules found, suggest missing availabilities
                     $suggestions = $this->collectMinimalSuggestions(
                         $sortedDemands,
                         $teacherAvailabilities,
                         $sectionSchedules
                     );
-
                     DB::rollBack();
                     return [
                         'success' => false,
@@ -119,15 +103,11 @@ class ScheduleGeneratorService
                         'suggestions' => $suggestions,
                     ];
                 }
-
-                // Save all valid schedules (or limit to a reasonable number)
                 $maxSchedulesToSave = min(count($allSchedules), 10); // Limit to 10 schedules
                 $savedSchedules = [];
-
                 for ($i = 0; $i < $maxSchedulesToSave; $i++) {
                     $savedSchedules[] = $allSchedules[$i];
                 }
-
                 DB::commit();
                 return [
                     'success' => true,
@@ -137,8 +117,6 @@ class ScheduleGeneratorService
                 ];
             } else {
                 $this->updateStatus('running', 15, 'Generating a single schedule');
-
-                // Throttle log spam in the inner loop (NEW: pass step)
                 $schedule = $this->generateInitialSchedule(
                     $sortedDemands,
                     $sections,
@@ -147,7 +125,6 @@ class ScheduleGeneratorService
                     $sectionSchedules,
                     ['log_step' => 50] + $options
                 );
-
                 if (empty($schedule)) {
                     $suggestions = $this->collectMinimalSuggestions(
                         $sortedDemands,
@@ -161,27 +138,21 @@ class ScheduleGeneratorService
                         'suggestions' => $suggestions,
                     ];
                 }
-
                 if ($optimizeSchedule) {
-                    // Cap the optimizer’s work; long optimizations cause timeouts
                     $this->updateStatus('running', 70, 'Optimizing schedule');
                     $schedule = $this->scheduleOptimizer->optimize(
                         $schedule,
                         $teacherAvailabilities,
                         $sectionSchedules,
-                        ['max_iterations' => 25] // keep small for Test #2 scale
+                        ['max_iterations' => 25]
                     );
                     $this->updateStatus('running', 90, 'Schedule optimized');
                 }
-
                 $schedule = collect($schedule)
                     ->unique(fn($r) => $this->slotKey($r['day_of_week'], (int) $r['period_id']) . '|' . $r['section_id'])
                     ->values()
                     ->all();
-
-                // Save the schedule
                 $this->saveSchedule($schedule);
-
                 DB::commit();
                 return [
                     'success' => true,
@@ -189,7 +160,6 @@ class ScheduleGeneratorService
                     'schedule' => $schedule,
                 ];
             }
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error("Schedule generation failed: {$e->getMessage()}");
@@ -230,8 +200,7 @@ class ScheduleGeneratorService
 
     protected function sortByConstraintDifficultyFast(Collection $demands): Collection
     {
-        // Precompute availability counts once
-        $availCount = []; // teacher_id => #slots
+        $availCount = [];
         foreach ($this->teacherSlotList as $tid => $list) {
             $availCount[(int) $tid] = count($list);
         }
@@ -240,13 +209,11 @@ class ScheduleGeneratorService
         return $demands->sortBy(function ($ss) use (&$cache, $availCount) {
             $key = $ss->id;
             if (!array_key_exists($key, $cache)) {
-                // allow ->teachers or ->teacher
                 $teacherList = collect($ss->teachers ?? ($ss->teacher ? [$ss->teacher] : []));
                 $slots = 0;
                 foreach ($teacherList as $t) {
                     $slots += $availCount[$t->id] ?? 0;
                 }
-                // smaller = harder; zero goes first
                 $cache[$key] = $slots ?: 0;
             }
             return $cache[$key];
@@ -278,7 +245,6 @@ class ScheduleGeneratorService
         Collection $sectionSchedules,
         array &$allSchedules
     ): void {
-        // if all demands placed, record one full schedule
         if ($idx >= $demands->count()) {
             $allSchedules[] = $currentSchedule;
             return;
@@ -292,12 +258,9 @@ class ScheduleGeneratorService
         $subjectId = $demand->subject_id;
 
         foreach ($demand->teachers as $teacher) {
-            // qualification
             if (!$this->constraintChecker->teacherCanTeach($teacher->id, $demand->id)) {
                 continue;
             }
-
-            // find available slots
             $slots = $this->getAvailableSlots(
                 $teacher,
                 $demand,
@@ -310,11 +273,8 @@ class ScheduleGeneratorService
 
             foreach ($slots as $slot) {
                 $key = "{$slot['day_of_week']}_{$slot['period_id']}";
-
-                // mark
                 $assignedTeacher[$teacher->id][$key] = true;
                 $assignedSection[$sectionId][$key] = true;
-
                 $currentSchedule[] = [
                     'section_id' => $sectionId,
                     'subject_id' => $subjectId,
@@ -322,8 +282,6 @@ class ScheduleGeneratorService
                     'period_id' => $slot['period_id'],
                     'day_of_week' => $slot['day_of_week'],
                 ];
-
-                // recurse
                 $this->backtrack(
                     $idx + 1,
                     $demands,
@@ -334,8 +292,6 @@ class ScheduleGeneratorService
                     $sectionSchedules,
                     $allSchedules
                 );
-
-                // undo
                 array_pop($currentSchedule);
                 unset($assignedTeacher[$teacher->id][$key]);
                 unset($assignedSection[$sectionId][$key]);
@@ -360,19 +316,16 @@ class ScheduleGeneratorService
         Collection $teacherAvailabilities,
         Collection $sectionSchedules
     ): array {
-        // 1) Build demand → optionPairs map
-        $demandOptions = [];  // [demandIdx => [ "T|D|P", ... ] ]
+        $demandOptions = [];
         foreach ($demands as $i => $demand) {
             $opts = [];
             foreach ($demand->teachers as $teacher) {
-                // find any sectionSlots for this section
                 $sectionSlots = $sectionSchedules
                     ->where('section_id', $demand->section_id)
                     ->map(fn($s) => [
                         'period_id' => $s->period_id,
                         'day_of_week' => $s->day_of_week
                     ]);
-                // for every slot, if teacher is NOT already available there:
                 foreach ($sectionSlots as $slot) {
                     $key = "{$teacher->id}|{$slot['day_of_week']}|{$slot['period_id']}";
                     if (
@@ -392,32 +345,26 @@ class ScheduleGeneratorService
             }
             $demandOptions[$i] = $opts;
         }
-
-        // 2) Greedy hitting‑set: choose the option that covers the most uncovered demands
         $uncovered = array_keys($demandOptions);
         $suggestions = [];
         while (!empty($uncovered)) {
-            // tally coverage of each option
-            $coverage = [];  // [optKey => count]
+            $coverage = [];
             foreach ($uncovered as $i) {
                 foreach (array_keys($demandOptions[$i]) as $optKey) {
                     $coverage[$optKey] = ($coverage[$optKey] ?? 0) + 1;
                 }
             }
-            // pick option with max coverage
             arsort($coverage);
             [$bestOptKey,] = array_slice($coverage, 0, 1, true);
             if (!isset($bestOptKey)) {
-                break; // no available options
+                break;
             }
-            // record suggestion
             $parts = explode('|', $bestOptKey);
             $suggestions[] = [
                 'teacher_id' => (int) $parts[0],
                 'day_of_week' => $parts[1],
                 'period_id' => (int) $parts[2]
             ];
-            // remove all demands covered by this option
             $newUncovered = [];
             foreach ($uncovered as $i) {
                 if (!array_key_exists($bestOptKey, $demandOptions[$i])) {
@@ -426,7 +373,6 @@ class ScheduleGeneratorService
             }
             $uncovered = $newUncovered;
         }
-
         return $suggestions;
     }
 
@@ -557,13 +503,10 @@ class ScheduleGeneratorService
 
         foreach ($sectionSubjects as $sectionSubject) {
             $amount = $sectionSubject->subject->amount ?? 1;
-
-            // Create multiple instances based on the amount
             for ($i = 0; $i < $amount; $i++) {
                 $demands->push($sectionSubject);
             }
         }
-
         return $demands;
     }
 
@@ -574,34 +517,26 @@ class ScheduleGeneratorService
      * @return Collection
      */
     protected function sortByConstraintDifficulty(
-        \Illuminate\Support\Collection $demands,
-        \Illuminate\Support\Collection $teacherAvailabilities
-    ): \Illuminate\Support\Collection {
-        // Precompute teacher availability counts once
+        Collection $demands,
+        Collection $teacherAvailabilities
+    ): Collection {
         $availCount = $teacherAvailabilities
             ->groupBy('teacher_id')
-            ->map->count(); // teacher_id => #slots
-
-        // Cache difficulty per SectionSubject to avoid recomputing for exploded duplicates
+            ->map->count();
         $difficultyCache = [];
-
         return $demands->sortBy(function ($sectionSubject) use ($availCount, &$difficultyCache) {
             $key = $sectionSubject->id;
 
             if (!array_key_exists($key, $difficultyCache)) {
-                // Allow either ->teachers (collection) or ->teacher (single)
                 $teacherList = collect($sectionSubject->teachers ?? ($sectionSubject->teacher ? [$sectionSubject->teacher] : []));
                 $availableTeachers = $teacherList->count();
                 $availableSlots = $teacherList->sum(function ($t) use ($availCount) {
                     return (int) ($availCount[$t->id] ?? 0);
                 });
-
-                // Smaller value = more constrained first
                 $difficultyCache[$key] = ($availableTeachers === 0 || $availableSlots === 0)
                     ? 0
                     : $availableSlots;
             }
-
             return $difficultyCache[$key];
         })->values();
     }
@@ -635,7 +570,7 @@ class ScheduleGeneratorService
         $assignedTeacherSlots = [];
         $assignedSectionSlots = [];
         $forceAssign = $options['force_assign'] ?? false;
-        $logStep = max(1, (int) ($options['log_step'] ?? 100)); // log every N items
+        $logStep = max(1, (int) ($options['log_step'] ?? 100));
 
         $total = $demands->count();
         foreach ($demands as $index => $sectionSubject) {
@@ -646,15 +581,9 @@ class ScheduleGeneratorService
                     "Placing demand " . ($index + 1) . " of " . $total
                 );
             }
-
-            // eligible teachers for this demand (usually 1 in your data model)
             $possibleTeachers = $sectionSubject->teachers ?? ($sectionSubject->teacher ? [$sectionSubject->teacher] : []);
             $assigned = false;
-
             foreach ($possibleTeachers as $teacher) {
-                // If teachers relation already encodes eligibility, skip extra checker call
-                // if (!$this->constraintChecker->teacherCanTeach($teacher->id, $sectionSubject->id)) continue;
-
                 $availableSlots = $this->getAvailableSlots(
                     $teacher,
                     $sectionSubject,
@@ -664,12 +593,9 @@ class ScheduleGeneratorService
                     $sectionSchedules,
                     ['force_assign' => $forceAssign]
                 );
-
                 if (empty($availableSlots))
                     continue;
-
-                $slot = $availableSlots[0]; // greedy pick
-
+                $slot = $availableSlots[0];
                 $schedules[] = [
                     'section_id' => (int) $sectionSubject->section_id,
                     'subject_id' => (int) $sectionSubject->subject_id,
@@ -677,17 +603,14 @@ class ScheduleGeneratorService
                     'period_id' => (int) $slot['period_id'],
                     'day_of_week' => $slot['day_of_week'],
                 ];
-
                 $key = $this->slotKey($slot['day_of_week'], (int) $slot['period_id']);
                 $assignedTeacherSlots[$teacher->id][$key] = true;
                 $assignedSectionSlots[$sectionSubject->section_id][$key] = true;
                 $assignedTeacherSlots[$teacher->id][$key] = true;
                 $assignedSectionSlots[$sectionSubject->section_id][$key] = true;
-
                 $assigned = true;
                 break;
             }
-
             if (!$assigned) {
                 $this->status['errors'][] =
                     "Could not assign {$sectionSubject->subject->name} to section {$sectionSubject->section->name}";
@@ -713,37 +636,27 @@ class ScheduleGeneratorService
         SectionSubject $sectionSubject,
         array $assignedTeacherSlots,
         array $assignedSectionSlots,
-        Collection $teacherAvailabilities,   // kept for signature compatibility (unused now)
-        Collection $sectionSchedules,        // kept for signature compatibility (unused now)
+        Collection $teacherAvailabilities,
+        Collection $sectionSchedules,
         array $options
     ): array {
         $tid = (int) $teacher->id;
         $sid = (int) $sectionSubject->section_id;
-
         $teacherKeys = $this->teacherSlotList[$tid] ?? [];
         $sectionSet = $this->sectionSlotSet[$sid] ?? [];
-
         $out = [];
         foreach ($teacherKeys as $key) {
-            // must be a slot that exists for the section
             if (!isset($sectionSet[$key]))
                 continue;
-
-            // enforce not already used by this teacher/section
             if (isset($assignedTeacherSlots[$tid][$key]))
                 continue;
             if (isset($assignedSectionSlots[$sid][$key]))
                 continue;
-
-            // decode
             [$day, $period] = explode('|', $key);
             $out[] = ['day_of_week' => $day, 'period_id' => (int) $period];
         }
         return $out;
     }
-
-
-
 
 
     protected function collectChoices(
@@ -761,7 +674,6 @@ class ScheduleGeneratorService
             $subjectName = $sectionSubject->subject->name;
 
             foreach ($sectionSubject->teachers as $teacher) {
-                // Build list of ALL section slots for that section
                 $slots = $sectionSchedules
                     ->where('section_id', $sectionId)
                     ->map(fn($s) => [
@@ -771,7 +683,6 @@ class ScheduleGeneratorService
                     ->unique()
                     ->values()
                     ->all();
-
                 $choices[] = [
                     'teacher_id' => $teacher->id,
                     'teacher_name' => $teacher->user->first_name . ' ' . $teacher->user->last_name,
@@ -782,7 +693,6 @@ class ScheduleGeneratorService
                 ];
             }
         }
-
         return $choices;
     }
 
@@ -806,7 +716,6 @@ class ScheduleGeneratorService
                         'teacher_id' => (int) $row['teacher_id'],
                         'updated_at' => now(),
                     ]);
-
             if ($affected === 0) {
                 Log::warning('No SectionSchedule row matched for update', $row);
             }
@@ -844,21 +753,17 @@ class ScheduleGeneratorService
     protected function exportAsJson(Collection $schedules): array
     {
         $result = [];
-
         foreach ($schedules as $schedule) {
             $sectionName = $schedule->section->name;
             $dayOfWeek = $schedule->day_of_week;
             $periodName = $schedule->period->name;
             $periodTime = $schedule->period->start_time . ' - ' . $schedule->period->end_time;
-
             if (!isset($result[$sectionName])) {
                 $result[$sectionName] = [];
             }
-
             if (!isset($result[$sectionName][$dayOfWeek])) {
                 $result[$sectionName][$dayOfWeek] = [];
             }
-
             $result[$sectionName][$dayOfWeek][] = [
                 'period' => $periodName,
                 'time' => $periodTime,
@@ -866,7 +771,6 @@ class ScheduleGeneratorService
                 'teacher' => $schedule->teacher->name
             ];
         }
-
         return [
             'format' => 'json',
             'data' => $result
@@ -886,10 +790,6 @@ class ScheduleGeneratorService
         $this->status['state'] = $state;
         $this->status['progress'] = $progress;
         $this->status['message'] = $message;
-
         Log::info("Schedule generator: $message", ['state' => $state, 'progress' => $progress]);
     }
-
-
-
 }

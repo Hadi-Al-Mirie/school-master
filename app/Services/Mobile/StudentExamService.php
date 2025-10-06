@@ -10,30 +10,19 @@ use Illuminate\Support\Facades\DB;
 
 class StudentExamService
 {
-    /**
-     * List student's exam attempts for the current active year with aggregates (no pagination).
-     * Note: exam_attempts has no 'submitted_at' column. We use created_at as the submission timestamp.
-     */
     public function index(int $userId, array $filters = []): array
     {
-        // Student
         $student = Student::with('user:id,first_name,last_name')
             ->where('user_id', $userId)
             ->first();
-
         if (!$student) {
             return ['ok' => false, 'message' => __('mobile/student/exams.errors.student_not_found')];
         }
-
-        // Active year
         $activeYear = Year::where('is_active', true)->first();
         if (!$activeYear) {
             return ['ok' => false, 'message' => __('mobile/student/exams.errors.active_year_not_found')];
         }
-
         $semesterIds = Semester::where('year_id', $activeYear->id)->pluck('id');
-
-        // Base query (join exams to scope to active-year semesters)
         $q = ExamAttempt::query()
             ->join('exams', 'exams.id', '=', 'exam_attempts.exam_id')
             ->where('exam_attempts.student_id', $student->id)
@@ -50,7 +39,6 @@ class StudentExamService
                 !empty($filters['subject_id']),
                 fn($qq) => $qq->where('exams.subject_id', (int) $filters['subject_id'])
             )
-            // ✅ teacher filter should use exam_attempts.teacher_id
             ->when(
                 !empty($filters['teacher_id']),
                 fn($qq) => $qq->where('exam_attempts.teacher_id', (int) $filters['teacher_id'])
@@ -67,7 +55,6 @@ class StudentExamService
                 isset($filters['max_result']),
                 fn($qq) => $qq->where('exam_attempts.result', '<=', (float) $filters['max_result'])
             )
-            // Use created_at instead of submitted_at
             ->when(
                 !empty($filters['submitted_from']),
                 fn($qq) => $qq->whereDate('exam_attempts.created_at', '>=', $filters['submitted_from'])
@@ -76,8 +63,6 @@ class StudentExamService
                 !empty($filters['submitted_to']),
                 fn($qq) => $qq->whereDate('exam_attempts.created_at', '<=', $filters['submitted_to'])
             );
-
-        // Sorting (use created_at)
         switch ($filters['sort'] ?? 'newest') {
             case 'oldest':
                 $q->orderBy('exam_attempts.created_at', 'asc')->orderBy('exam_attempts.id', 'asc');
@@ -91,31 +76,24 @@ class StudentExamService
             default:
                 $q->orderBy('exam_attempts.created_at', 'desc')->orderBy('exam_attempts.id', 'desc');
         }
-
-        // Fetch attempts + base exam info (alias created_at as submitted_at)
         $rows = $q->get([
             'exam_attempts.id',
             'exam_attempts.exam_id',
             'exam_attempts.status',
             'exam_attempts.result',
             DB::raw('exam_attempts.created_at as submitted_at'),
-            // 🔁 teacher belongs to attempt, not exam
             'exam_attempts.teacher_id as a_teacher_id',
             'exams.id as e_id',
             'exams.name as exam_name',
             'exams.semester_id as e_semester_id',
             'exams.subject_id as e_subject_id',
         ]);
-
-        // Lookup relations in batch
         $subjects = DB::table('subjects')->whereIn('id', $rows->pluck('e_subject_id')->filter()->unique())->get(['id', 'name'])->keyBy('id');
         $semesters = DB::table('semesters')->whereIn('id', $rows->pluck('e_semester_id')->unique())->get(['id', 'name'])->keyBy('id');
-        $teacherIds = $rows->pluck('a_teacher_id')->filter()->unique(); // <- from attempts
+        $teacherIds = $rows->pluck('a_teacher_id')->filter()->unique();
         $teachers = DB::table('teachers')->whereIn('id', $teacherIds)->get(['id', 'user_id'])->keyBy('id');
         $userIds = $teachers->pluck('user_id')->filter()->unique();
         $users = DB::table('users')->whereIn('id', $userIds)->get(['id', 'first_name', 'last_name', 'email'])->keyBy('id');
-
-        // Aggregates (respect filters) — use created_at for date range
         $scope = ExamAttempt::query()
             ->join('exams', 'exams.id', '=', 'exam_attempts.exam_id')
             ->where('exam_attempts.student_id', $student->id)
@@ -132,7 +110,6 @@ class StudentExamService
                 !empty($filters['subject_id']),
                 fn($qq) => $qq->where('exams.subject_id', (int) $filters['subject_id'])
             )
-            // ✅ teacher filter on attempts
             ->when(
                 !empty($filters['teacher_id']),
                 fn($qq) => $qq->where('exam_attempts.teacher_id', (int) $filters['teacher_id'])
@@ -157,30 +134,25 @@ class StudentExamService
                 !empty($filters['submitted_to']),
                 fn($qq) => $qq->whereDate('exam_attempts.created_at', '<=', $filters['submitted_to'])
             );
-
         $totalCount = (int) (clone $scope)->count();
         $approvedCount = (int) (clone $scope)->where('exam_attempts.status', 'approved')->count();
         $pendingCount = (int) (clone $scope)->where('exam_attempts.status', 'wait')->count();
         $avgResult = (float) (clone $scope)->avg('exam_attempts.result');
         $bestRow = (clone $scope)->orderByDesc('exam_attempts.result')->first();
         $lastRow = (clone $scope)->orderByDesc('exam_attempts.id')->first();
-
-        // Transform list
         $items = $rows->map(function ($r) use ($subjects, $semesters, $teachers, $users) {
             $teacher = $r->a_teacher_id ? ($teachers[$r->a_teacher_id] ?? null) : null;
             $teacherU = $teacher ? ($users[$teacher->user_id] ?? null) : null;
-
             return [
                 'attempt_id' => (int) $r->id,
-                'status' => $r->status, // approved | wait
+                'status' => $r->status,
                 'result' => (float) $r->result,
-                'submitted_at' => $r->submitted_at, // from created_at alias
+                'submitted_at' => $r->submitted_at,
                 'exam' => [
                     'id' => (int) $r->e_id,
                     'name' => $r->exam_name,
                     'semester' => ($s = $semesters[$r->e_semester_id] ?? null) ? ['id' => (int) $s->id, 'name' => $s->name] : null,
                     'subject' => ($sub = $subjects[$r->e_subject_id] ?? null) ? ['id' => (int) $sub->id, 'name' => $sub->name] : null,
-                    // Keep teacher info in payload; source is attempt.teacher_id
                     'teacher' => $teacherU ? [
                         'id' => (int) $r->a_teacher_id,
                         'name' => trim(($teacherU->first_name ?? '') . ' ' . ($teacherU->last_name ?? '')),
@@ -189,7 +161,6 @@ class StudentExamService
                 ],
             ];
         });
-
         return [
             'ok' => true,
             'message' => __('mobile/student/exams.success.loaded'),
@@ -214,7 +185,7 @@ class StudentExamService
                         'submitted_at' => optional($lastRow)->created_at,
                     ] : null,
                 ],
-                'attempts' => $items,   // no pagination
+                'attempts' => $items,
                 'count' => $items->count(),
             ],
         ];

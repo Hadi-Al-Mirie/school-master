@@ -9,7 +9,7 @@ class FinalizeExamResultsRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true; // routes already guarded by IsSupervisor + active.semester
+        return true;
     }
 
     public function rules(): array

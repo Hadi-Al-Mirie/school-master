@@ -3,10 +3,8 @@
 namespace App\Http\Controllers\Api\V1\Dashboard;
 use App\Http\Controllers\Controller;
 use App\Models\Supervisor;
-use Illuminate\Http\Request;
 use App\Models\Student;
 use App\Models\Teacher;
-use App\Models\Employee;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 class HomeController extends Controller

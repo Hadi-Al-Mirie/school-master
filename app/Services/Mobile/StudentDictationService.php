@@ -10,33 +10,19 @@ use Illuminate\Support\Facades\DB;
 
 class StudentDictationService
 {
-    /**
-     * List student's dictations for the current active year with aggregates (no pagination).
-     *
-     * @param  int   $userId
-     * @param  array $filters [semester_id, teacher_id, section_id, sort]
-     * @return array{ok:bool,message:string,data?:array}
-     */
     public function index(int $userId, array $filters = []): array
     {
-        // Resolve student
         $student = Student::with('user:id,first_name,last_name')
             ->where('user_id', $userId)
             ->first();
-
         if (!$student) {
             return ['ok' => false, 'message' => __('mobile/student/dictations.errors.student_not_found')];
         }
-
-        // Resolve active academic year
         $activeYear = Year::where('is_active', true)->first();
         if (!$activeYear) {
             return ['ok' => false, 'message' => __('mobile/student/dictations.errors.active_year_not_found')];
         }
-
         $semesterIds = Semester::where('year_id', $activeYear->id)->pluck('id');
-
-        // Base query (active year)
         $q = Dictation::query()
             ->with([
                 'semester:id,name,year_id',
@@ -45,8 +31,6 @@ class StudentDictationService
             ])
             ->where('student_id', $student->id)
             ->whereIn('semester_id', $semesterIds);
-
-        // Filters
         if (!empty($filters['semester_id']) && $semesterIds->contains((int) $filters['semester_id'])) {
             $q->where('semester_id', (int) $filters['semester_id']);
         }
@@ -56,8 +40,6 @@ class StudentDictationService
         if (!empty($filters['section_id'])) {
             $q->where('section_id', (int) $filters['section_id']);
         }
-
-        // Sorting
         switch ($filters['sort'] ?? 'newest') {
             case 'oldest':
                 $q->orderBy('created_at', 'asc')->orderBy('id', 'asc');
@@ -71,23 +53,17 @@ class StudentDictationService
             default:
                 $q->orderBy('created_at', 'desc')->orderBy('id', 'desc');
         }
-
         $dictations = $q->get();
-
-        // Aggregates (respect the same filters above)
         $scope = Dictation::query()
             ->where('student_id', $student->id)
             ->whereIn('semester_id', $semesterIds)
             ->when(!empty($filters['semester_id']) && $semesterIds->contains((int) $filters['semester_id']), fn($qq) => $qq->where('semester_id', (int) $filters['semester_id']))
             ->when(!empty($filters['teacher_id']), fn($qq) => $qq->where('teacher_id', (int) $filters['teacher_id']))
             ->when(!empty($filters['section_id']), fn($qq) => $qq->where('section_id', (int) $filters['section_id']));
-
         $count = (int) (clone $scope)->count();
         $avgResult = (float) (clone $scope)->avg('result');
         $bestRow = (clone $scope)->orderByDesc('result')->first();
         $lastRow = (clone $scope)->orderByDesc('id')->first();
-
-        // Transform items
         $items = $dictations->map(function (Dictation $d) {
             return [
                 'id' => $d->id,

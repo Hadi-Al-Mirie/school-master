@@ -10,7 +10,6 @@ class ScheduleCallRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // route middleware IsTeacher guards this
         return true;
     }
 

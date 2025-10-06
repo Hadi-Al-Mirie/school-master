@@ -19,11 +19,6 @@ class NoteService
         return Semester::where('is_active', true)->first();
     }
 
-    /**
-     * Get notes that belong to the supervisor's stage.
-     * Optionally filter by status (pending/approved/dismissed). If "all", no status filter.
-     * Default: current active semester only (if it exists).
-     */
     public function stageNotes(string $status = 'pending')
     {
         $supervisor = $this->supervisor();
@@ -45,10 +40,6 @@ class NoteService
         return $q->get(['id', 'by_id', 'student_id', 'semester_id', 'type', 'reason', 'status', 'value', 'created_at']);
     }
 
-    /**
-     * Approve or dismiss a note AFTER verifying it belongs to the supervisor's stage
-     * and is still pending.
-     */
     public function decide(Note $note, string $decision, ?float $value = null): Note
     {
         $supervisor = $this->supervisor();

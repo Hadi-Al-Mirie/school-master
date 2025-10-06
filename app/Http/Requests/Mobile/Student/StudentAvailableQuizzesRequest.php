@@ -9,13 +9,12 @@ class StudentAvailableQuizzesRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true; // protected by IsStudent middleware
+        return true;
     }
 
     public function rules(): array
     {
         return [
-            // Optional convenience filters
             'subject_id' => ['nullable', 'integer', 'exists:subjects,id'],
             'sort' => ['nullable', Rule::in(['newest', 'oldest', 'ending_soon'])],
         ];

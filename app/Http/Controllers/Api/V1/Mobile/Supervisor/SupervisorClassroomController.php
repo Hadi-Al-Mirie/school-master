@@ -11,12 +11,8 @@ class SupervisorClassroomController extends Controller
 {
     public function __construct(private ClassroomService $classroomService)
     {
-        // auth:sanctum + IsSupervisor are on the route group
     }
 
-    /**
-     * GET: Classrooms in the supervisor's stage, each with its subjects (from section_subjects).
-     */
     public function classroomsWithSubjects(): JsonResponse
     {
         try {

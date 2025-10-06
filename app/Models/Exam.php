@@ -27,7 +27,6 @@ class Exam extends Model
     public const STATUS_WAIT = 'wait';
     public const STATUS_RELEASED = 'released';
 
-    // Relations
     public function supervisor(): BelongsTo
     {
         return $this->belongsTo(Supervisor::class, 'created_by');

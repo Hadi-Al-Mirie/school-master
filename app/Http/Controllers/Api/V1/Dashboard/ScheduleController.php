@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api\V1\Dashboard;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Dashboard\schedule\InitializeWeeklyScheduleRequest;
-use App\Http\Requests\Dashboard\schedule\GenerateScheduleRequest;
 use App\Services\Dashboard\Schedule\ScheduleGeneratorService;
 use App\Services\Dashboard\Schedule\InitWeeklyScheduleService;
 use Illuminate\Support\Facades\Log;
@@ -18,12 +17,6 @@ class ScheduleController extends Controller
     {
         $this->scheduleGenerator = $scheduleGenerator;
     }
-
-    /**
-     * Initialize weekly schedule:
-     * - Sync teacher_availabilities
-     * - Initialize section_schedules per classroom/day with empty slots
-     */
     public function initializeWeekly(InitializeWeeklyScheduleRequest $request)
     {
         $payload = $request->validated();

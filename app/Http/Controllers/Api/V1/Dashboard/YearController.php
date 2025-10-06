@@ -5,15 +5,14 @@ namespace App\Http\Controllers\Api\V1\Dashboard;
 use App\Http\Controllers\Controller;
 use App\Models\Year;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 class YearController extends Controller
 {
 
     public function index()
     {
-        $years=Year::all()->select(['id','name','start_date','end_date']);
-        return response()->json(['succes'=>true,'date'=>$years],200);
+        $years = Year::all()->select(['id', 'name', 'start_date', 'end_date']);
+        return response()->json(['succes' => true, 'date' => $years], 200);
     }
 
     public function store(Request $request)

@@ -8,7 +8,6 @@ class CreateNoteRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Supervisor middleware should guard route; allow to pass to controller for final checks
         return true;
     }
 

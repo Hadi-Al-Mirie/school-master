@@ -45,7 +45,6 @@ class ScheduledCall extends Model
         return $this->belongsTo(Call::class);
     }
 
-    /** helper: scheduled end time */
     public function getScheduledEndAttribute()
     {
         return $this->scheduled_at->copy()->addMinutes($this->duration_minutes);

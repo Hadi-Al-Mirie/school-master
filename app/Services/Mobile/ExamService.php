@@ -18,25 +18,19 @@ class ExamService
         return Semester::where('is_active', true)->first();
     }
 
-    /**
-     * @return array{created:int, skipped:int, exams:array<int, array>}
-     */
     public function createForClassroomSections(int $classroomId, int $subjectId, float $maxResult, ?string $name = null): array
     {
         $semester = $this->activeSemester();
         if (!$semester) {
             throw new \RuntimeException(__('mobile/supervisor/exam.errors.no_active_semester'));
         }
-
         $userId = Auth::id();
         $supervisor = Supervisor::where('user_id', $userId)->first();
         if (!$supervisor) {
             throw new \RuntimeException(__('mobile/supervisor/exam.errors.supervisor_not_found'));
         }
-
         $classroom = Classroom::with('sections:id,classroom_id')->findOrFail($classroomId);
         $subject = Subject::findOrFail($subjectId);
-
         $sections = $classroom->sections;
         if ($sections->isEmpty()) {
             throw new \RuntimeException(__('mobile/supervisor/exam.errors.no_sections_in_classroom'));
@@ -45,7 +39,6 @@ class ExamService
         $created = 0;
         $skipped = 0;
         $out = [];
-
         foreach ($sections as $section) {
             $exam = Exam::create(
                 [

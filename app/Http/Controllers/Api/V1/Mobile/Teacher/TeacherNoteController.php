@@ -24,8 +24,8 @@ class TeacherNoteController extends Controller
                 'semester_id' => $semester->id,
                 'by_id' => $teacherUserId,
                 'type' => $request->type,
-                'status'=>'approved',
-                'value'=>$value,
+                'status' => 'approved',
+                'value' => $value,
                 'reason' => $request->reason,
             ]);
             return response()->json([

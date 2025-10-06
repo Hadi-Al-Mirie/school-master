@@ -9,12 +9,12 @@ class ZegoService
 {
     public function generateToken(int $userId): string
     {
-        $appId   = config('zego.app_id');
-        $secret  = config('zego.server_secret');
-        $expire  = config('zego.token_expire');
+        $appId = config('zego.app_id');
+        $secret = config('zego.server_secret');
+        $expire = config('zego.token_expire');
         $payload = '';
 
-        $token = ZegoServerAssistant::generateToken04($appId, (string)$userId, $secret, $expire, $payload);
+        $token = ZegoServerAssistant::generateToken04($appId, (string) $userId, $secret, $expire, $payload);
 
         if ($token->code == ZegoErrorCodes::success) {
             return $token->token;
@@ -23,9 +23,6 @@ class ZegoService
         throw new \RuntimeException('Failed to generate ZEGOCLOUD token: ' . $token->code);
     }
 
-    /**
-     * Generate a random, unique channel name.
-     */
     public function generateChannelName(): string
     {
         return Str::uuid()->toString();

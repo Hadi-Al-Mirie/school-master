@@ -3,20 +3,13 @@
 namespace App\Services\Mobile;
 
 use App\Models\Attendance;
-use App\Models\AttendanceType;
 use App\Models\Dictation;
-use App\Models\Exam;
 use App\Models\ExamAttempt;
 use App\Models\Note;
-use App\Models\Period;
-use App\Models\Quiz;
 use App\Models\QuizAttempt;
 use App\Models\SectionSchedule;
 use App\Models\Semester;
 use App\Models\Student;
-use App\Models\Subject;
-use App\Models\Teacher;
-use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -24,11 +17,9 @@ class StudentHomeService
 {
     public function summary(int $userId, ?int $semesterId = null): array
     {
-        // Load student
         $student = Student::with(['user', 'stage', 'classroom', 'section'])
             ->where('user_id', $userId)
             ->first();
-
         if (!$student) {
             return [
                 'ok' => false,
@@ -36,12 +27,9 @@ class StudentHomeService
                 'data' => null,
             ];
         }
-
-        // Active or selected semester
         $semester = $semesterId
             ? Semester::find($semesterId)
             : Semester::where('is_active', true)->first();
-
         if (!$semester) {
             return [
                 'ok' => false,
@@ -49,26 +37,18 @@ class StudentHomeService
                 'data' => null,
             ];
         }
-
-        // NOTES & POINTS
         $approvedNotes = Note::query()
             ->where('student_id', $student->id)
             ->where('semester_id', $semester->id)
             ->where('status', 'approved');
-
         $positiveTotal = (clone $approvedNotes)->where('type', 'positive')->sum('value');
         $negativeTotal = (clone $approvedNotes)->where('type', 'negative')->sum('value');
-
-        // Net points consider cashed_points as already redeemed by the student
         $netPoints = max(0, ($positiveTotal - $negativeTotal) - (float) $student->cashed_points);
-
         $notesCounts = Note::select('status', DB::raw('COUNT(*) as cnt'))
             ->where('student_id', $student->id)
             ->where('semester_id', $semester->id)
             ->groupBy('status')
             ->pluck('cnt', 'status');
-
-        // ATTENDANCE
         $attendanceByType = Attendance::query()
             ->join('attendance_types', 'attendance_types.id', '=', 'attendances.attendance_type_id')
             ->where('attendances.attendable_type', Student::class)
@@ -77,19 +57,13 @@ class StudentHomeService
             ->select('attendance_types.id', 'attendance_types.name', DB::raw('COUNT(*) as count'))
             ->groupBy('attendance_types.id', 'attendance_types.name')
             ->get();
-
         $attendanceTotal = $attendanceByType->sum('count');
-
-        // If your attendance_types store a numeric "value" (e.g., present=1, absent=0),
-        // you can also expose a score:
         $attendanceScore = Attendance::query()
             ->join('attendance_types', 'attendance_types.id', '=', 'attendances.attendance_type_id')
             ->where('attendances.attendable_type', Student::class)
             ->where('attendances.attendable_id', $student->id)
             ->where('attendances.semester_id', $semester->id)
             ->sum('attendance_types.value');
-
-        // DICTATIONS
         $dictationQuery = Dictation::query()
             ->where('student_id', $student->id)
             ->where('semester_id', $semester->id);
@@ -100,13 +74,10 @@ class StudentHomeService
                 return ['id' => $d->id, 'result' => (float) $d->result, 'created_at' => $d->created_at];
             }),
         ];
-
-        // QUIZZES
         $quizAttemptQuery = QuizAttempt::query()
             ->join('quizzes', 'quizzes.id', '=', 'quiz_attempts.quiz_id')
             ->where('quiz_attempts.student_id', $student->id)
             ->where('quizzes.semester_id', $semester->id);
-
         $quizzes = [
             'attempts' => (clone $quizAttemptQuery)->count(),
             'avg_score' => (float) (clone $quizAttemptQuery)->avg('quiz_attempts.total_score'),
@@ -115,13 +86,10 @@ class StudentHomeService
                 ->limit(3)
                 ->get(['quiz_attempts.id', 'quizzes.name as quiz_name', 'quiz_attempts.total_score', 'quiz_attempts.submitted_at']),
         ];
-
-        // EXAMS
         $examAttemptQuery = ExamAttempt::query()
             ->join('exams', 'exams.id', '=', 'exam_attempts.exam_id')
             ->where('exam_attempts.student_id', $student->id)
             ->where('exams.semester_id', $semester->id);
-
         $exams = [
             'approved_count' => (clone $examAttemptQuery)->where('exam_attempts.status', 'approved')->count(),
             'pending_count' => (clone $examAttemptQuery)->where('exam_attempts.status', 'wait')->count(),
@@ -130,10 +98,8 @@ class StudentHomeService
                 return ['exam_attempt_id' => $ea->id, 'result' => (float) $ea->result];
             }),
         ];
-
-        // TODAY'S SCHEDULE (Nice to show on home)
         $tz = config('app.timezone', 'Europe/Amsterdam');
-        $todayDow = strtolower(Carbon::now($tz)->format('l')); // e.g., 'sunday'
+        $todayDow = strtolower(Carbon::now($tz)->format('l'));
         $schedule = SectionSchedule::query()
             ->where('section_id', $student->section_id)
             ->where('day_of_week', $todayDow)
@@ -150,7 +116,6 @@ class StudentHomeService
                 'subjects.name as subject_name',
                 DB::raw("CONCAT(users.first_name, ' ', users.last_name) as teacher_name"),
             ]);
-
         return [
             'ok' => true,
             'message' => trans('mobile/student/home.success.loaded'),
@@ -195,7 +160,6 @@ class StudentHomeService
                 'quizzes' => $quizzes,
                 'exams' => $exams,
                 'today_schedule' => $schedule,
-                // Suggested: you can later add “rank in section”, “streaks”, etc.
             ],
         ];
     }

@@ -11,33 +11,19 @@ use Illuminate\Support\Facades\DB;
 
 class StudentAttendanceService
 {
-    /**
-     * List student's attendances for the current active year with aggregates (no pagination).
-     *
-     * @param  int   $userId
-     * @param  array $filters [attendance_type_id, semester_id, date_from, date_to, sort]
-     * @return array{ok:bool,message:string,data?:array}
-     */
     public function index(int $userId, array $filters = []): array
     {
-        // Resolve student
         $student = Student::with('user:id,first_name,last_name')
             ->where('user_id', $userId)
             ->first();
-
         if (!$student) {
             return ['ok' => false, 'message' => __('mobile/student/attendance.errors.student_not_found')];
         }
-
-        // Resolve active year and its semesters
         $activeYear = Year::where('is_active', true)->first();
         if (!$activeYear) {
             return ['ok' => false, 'message' => __('mobile/student/attendance.errors.active_year_not_found')];
         }
-
         $semesterIds = Semester::where('year_id', $activeYear->id)->pluck('id');
-
-        // Base query for attendances of this student within active year
         $q = Attendance::query()
             ->with([
                 'attendanceType:id,name,value',
@@ -47,12 +33,9 @@ class StudentAttendanceService
             ->where('attendable_type', Student::class)
             ->where('attendable_id', $student->id)
             ->whereIn('semester_id', $semesterIds);
-
-        // Filters
         if (!empty($filters['attendance_type_id'])) {
             $q->where('attendance_type_id', (int) $filters['attendance_type_id']);
         }
-
         if (!empty($filters['semester_id']) && $semesterIds->contains((int) $filters['semester_id'])) {
             $q->where('semester_id', (int) $filters['semester_id']);
         }
@@ -63,8 +46,6 @@ class StudentAttendanceService
         if (!empty($filters['date_to'])) {
             $q->whereDate('att_date', '<=', $filters['date_to']);
         }
-
-        // Sorting
         switch ($filters['sort'] ?? 'newest') {
             case 'oldest':
                 $q->orderBy('att_date', 'asc')->orderBy('id', 'asc');
@@ -72,10 +53,7 @@ class StudentAttendanceService
             default:
                 $q->orderBy('att_date', 'desc')->orderBy('id', 'desc');
         }
-
         $attendances = $q->get();
-
-        // Aggregates by type across active year (respecting date/semester filters above)
         $byType = Attendance::query()
             ->join('attendance_types', 'attendance_types.id', '=', 'attendances.attendance_type_id')
             ->where('attendances.attendable_type', Student::class)
@@ -102,11 +80,8 @@ class StudentAttendanceService
                     'points' => (int) $r->points,
                 ];
             });
-
         $totalCount = $byType->sum('count');
         $totalPoints = $byType->sum('points');
-
-        // Transform items (list)
         $items = $attendances->map(function (Attendance $a) {
             return [
                 'id' => $a->id,
@@ -126,7 +101,6 @@ class StudentAttendanceService
                 'created_at' => $a->created_at,
             ];
         });
-
         return [
             'ok' => true,
             'message' => __('mobile/student/attendance.success.loaded'),
@@ -143,7 +117,7 @@ class StudentAttendanceService
                         'points' => (int) $totalPoints,
                     ],
                 ],
-                'attendances' => $items, // no pagination
+                'attendances' => $items,
                 'count' => $items->count(),
             ],
         ];

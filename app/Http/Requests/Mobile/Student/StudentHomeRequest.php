@@ -8,7 +8,7 @@ class StudentHomeRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true; // IsStudent middleware guards access
+        return true;
     }
 
     public function rules(): array
@@ -22,7 +22,7 @@ class StudentHomeRequest extends FormRequest
     {
         return [
             'semester_id.integer' => __('mobile/student/home.validation.semester_id.integer'),
-            'semester_id.exists'  => __('mobile/student/home.validation.semester_id.exists'),
+            'semester_id.exists' => __('mobile/student/home.validation.semester_id.exists'),
         ];
     }
 }

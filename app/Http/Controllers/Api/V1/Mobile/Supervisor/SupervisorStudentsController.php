@@ -13,16 +13,12 @@ class SupervisorStudentsController extends Controller
         try {
             $user = Auth::user();
             $supervisor = $user->supervisor()->with('stage')->first();
-
             if (!$supervisor || !$supervisor->stage) {
                 return response()->json(['success' => false, 'message' => 'Supervisor or stage not found'], 422);
             }
-
-            // Load classrooms -> sections -> students.user in one go
             $classrooms = $supervisor->stage->classrooms()
                 ->with(['sections.students.user'])
                 ->get(['id', 'name']);
-
             $result = [];
             foreach ($classrooms as $classroom) {
                 foreach ($classroom->sections as $section) {
@@ -31,12 +27,10 @@ class SupervisorStudentsController extends Controller
                         'first_name' => $s->user->first_name,
                         'last_name' => $s->user->last_name,
                         'gender' => $s->gender,
-                    ])->values(); // ensure array indexes
-
+                    ])->values();
                     $result[$classroom->name][$section->name]['students'] = $students;
                 }
             }
-
             return response()->json(['success' => true, 'data' => $result]);
         } catch (\Throwable $e) {
             Log::error('Error fetching supervisor students', [

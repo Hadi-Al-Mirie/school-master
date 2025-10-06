@@ -2,18 +2,12 @@
 
 namespace App\Http\Controllers\Api\V1\Dashboard;
 
-
-use App\Http\Requests\StoreStudentRequest;
-use App\Http\Requests\UpdateStudentRequest;
-use App\Http\Resources\StudentResource;
 use App\Models\Student;
 use App\Models\User;
 use App\Models\Section;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 class StudentController extends Controller
@@ -66,10 +60,7 @@ class StudentController extends Controller
                 'classroom_id' => $classroom_id,
                 'stage_id' => $stage_id,
             ]);
-
-
             DB::commit();
-
             return response()->json([
                 'success' => true,
                 'message' => 'Student created successfully',
@@ -81,13 +72,9 @@ class StudentController extends Controller
                     ]
                 ]
             ], 201);
-
         } catch (\Exception $e) {
-
             DB::rollBack();
-
             \Log::error('Create student failed: ' . $e->getMessage());
-
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create student',

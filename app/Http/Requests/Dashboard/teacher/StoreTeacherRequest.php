@@ -23,8 +23,6 @@ class StoreTeacherRequest extends FormRequest
             'email' => ['required', 'email', 'min:5', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'max:255'],
             'phone' => ['required', 'string', 'min:10', 'max:20', 'unique:teachers,phone'],
-
-            // NEW: section_subjects assignments
             'section_subjects' => ['nullable', 'array', 'min:1'],
             'section_subjects.*.section_id' => ['required_with:section_subjects', 'integer', 'exists:sections,id'],
             'section_subjects.*.subject_id' => ['required_with:section_subjects', 'integer', 'exists:subjects,id'],
@@ -61,7 +59,6 @@ class StoreTeacherRequest extends FormRequest
             'phone.max' => __('dashboard/teacher/store/validation.phone.max'),
             'phone.unique' => __('dashboard/teacher/store/validation.phone.unique'),
 
-            // NEW: section_subjects messages
             'section_subjects.array' => __('dashboard/teacher/store/validation.section_subjects.array'),
             'section_subjects.min' => __('dashboard/teacher/store/validation.section_subjects.min'),
             'section_subjects.*.section_id.required_with' => __('dashboard/teacher/store/validation.section_subjects.section_id.required'),
@@ -79,20 +76,15 @@ class StoreTeacherRequest extends FormRequest
             $pairs = $this->input('section_subjects', []);
             if (!is_array($pairs) || empty($pairs))
                 return;
-
             $seen = [];
             foreach ($pairs as $idx => $pair) {
                 if (!isset($pair['section_id'], $pair['subject_id']))
                     continue;
-
-                // duplicate (within the same payload)
                 $key = $pair['section_id'] . '-' . $pair['subject_id'];
                 if (isset($seen[$key])) {
                     $v->errors()->add("section_subjects.$idx", __('dashboard/teacher/store/validation.section_subjects.duplicate'));
                 }
                 $seen[$key] = true;
-
-                // classroom match: subject.classroom_id == section.classroom_id
                 $section = Section::select('id', 'classroom_id')->find($pair['section_id']);
                 $subject = Subject::select('id', 'classroom_id')->find($pair['subject_id']);
                 if ($section && $subject && $section->classroom_id !== $subject->classroom_id) {

@@ -9,7 +9,7 @@ class StudentAttendancesIndexRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true; // Route is protected by IsStudent middleware
+        return true;
     }
 
     public function rules(): array

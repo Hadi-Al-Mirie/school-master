@@ -86,7 +86,6 @@ class ConstraintChecker
         $errors = [];
         $teacherAssignments = [];
         $sectionAssignments = [];
-
         foreach ($schedules as $index => $schedule) {
             $teacherId = $schedule['teacher_id'];
             $sectionId = $schedule['section_id'];
@@ -94,25 +93,17 @@ class ConstraintChecker
             $dayOfWeek = $schedule['day_of_week'];
             $periodId = $schedule['period_id'];
             $slotKey = $dayOfWeek . '_' . $periodId;
-
-            // Check teacher availability
             if (!$this->isTeacherAvailable($teacherId, $dayOfWeek, $periodId, $teacherAvailabilities)) {
                 $errors[] = "Teacher ID $teacherId is not available on $dayOfWeek at period $periodId";
             }
-
-            // Check teacher qualification
             if ($sectionSubjectId && !$this->teacherCanTeach($teacherId, $sectionSubjectId)) {
                 $errors[] = "Teacher ID $teacherId is not qualified to teach subject ID {$schedule['subject_id']} for section ID $sectionId";
             }
-
-            // Check teacher conflict
             if (isset($teacherAssignments[$teacherId][$slotKey])) {
                 $errors[] = "Teacher ID $teacherId has a conflict on $dayOfWeek at period $periodId";
             } else {
                 $teacherAssignments[$teacherId][$slotKey] = true;
             }
-
-            // Check section conflict
             if (isset($sectionAssignments[$sectionId][$slotKey])) {
                 $errors[] = "Section ID $sectionId has a conflict on $dayOfWeek at period $periodId";
             } else {
@@ -137,7 +128,6 @@ class ConstraintChecker
             ->where('section_id', $sectionId)
             ->where('subject_id', $subjectId)
             ->first();
-
         return $sectionSubject ? $sectionSubject->id : null;
     }
 }

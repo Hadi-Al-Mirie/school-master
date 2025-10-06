@@ -9,7 +9,7 @@ class StudentQuizzesIndexRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true; // protected by IsStudent middleware
+        return true;
     }
 
     public function rules(): array

@@ -65,13 +65,6 @@ class Student extends Model
         return $this->morphMany(Attendance::class, 'attendable');
     }
 
-    /**
-     * Calculate this student’s points.
-     *
-     * @param  string     $type      "exams", "quiz", "notes" , "attendances" or "all"
-     * @param  int|null   $teacherId optional teacher to filter by
-     * @return float
-     */
     public function calculatePoints(string $type = 'all', int $teacherId = null): float
     {
         $total = 0.00;

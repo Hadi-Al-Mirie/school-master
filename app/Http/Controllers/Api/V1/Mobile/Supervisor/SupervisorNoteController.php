@@ -12,9 +12,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Student;
 class SupervisorNoteController extends Controller
 {
-    /**
-     * Supervisor creates a note for a student.
-     */
+
     public function store(CreateNoteRequest $request): JsonResponse
     {
         $user = Auth::user();

@@ -12,12 +12,8 @@ class SupervisorAttendanceController extends Controller
 {
     public function __construct(private AttendanceService $attendanceService)
     {
-        // middleware IsSupervisor already on the route group
     }
 
-    /**
-     * POST: register attendance for a student or teacher.
-     */
     public function store(StoreAttendanceRequest $request): JsonResponse
     {
         try {
@@ -28,7 +24,6 @@ class SupervisorAttendanceController extends Controller
                 'att_date' => $request->input('att_date'),
                 'justification' => $request->input('justification'),
             ]);
-
             return response()->json([
                 'message' => __('mobile/supervisor/attendance.messages.created'),
                 'attendance' => [
@@ -44,7 +39,6 @@ class SupervisorAttendanceController extends Controller
                 ],
             ], 201);
         } catch (\RuntimeException $e) {
-            // Known business error (e.g., no active semester)
             return response()->json([
                 'message' => $e->getMessage(),
             ], 422);
@@ -53,7 +47,6 @@ class SupervisorAttendanceController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-
             return response()->json([
                 'message' => __('mobile/supervisor/attendance.messages.server_error'),
             ], 500);

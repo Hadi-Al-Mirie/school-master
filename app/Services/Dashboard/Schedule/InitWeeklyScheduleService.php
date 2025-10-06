@@ -5,9 +5,7 @@ namespace App\Services\Dashboard\Schedule;
 use App\Models\TeacherAvailabilities;
 use App\Models\SectionSchedule;
 use App\Models\Section;
-use App\Models\Classroom;
 use App\Models\Period;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class InitWeeklyScheduleService
@@ -23,13 +21,9 @@ class InitWeeklyScheduleService
             $teacherId = (int) $row['teacher_id'];
             $day = $row['day_of_week'];
             $periodIds = collect($row['period_ids'])->unique()->values()->all();
-
-            // wipe existing of that (teacher, day)
             TeacherAvailabilities::where('teacher_id', $teacherId)
                 ->where('day_of_week', $day)
                 ->delete();
-
-            // insert new
             $bulk = collect($periodIds)->map(fn($pid) => [
                 'teacher_id' => $teacherId,
                 'day_of_week' => $day,
@@ -37,11 +31,9 @@ class InitWeeklyScheduleService
                 'created_at' => now(),
                 'updated_at' => now(),
             ])->all();
-
             if (!empty($bulk)) {
                 TeacherAvailabilities::insert($bulk);
             }
-
             $summary[] = [
                 'teacher_id' => $teacherId,
                 'day_of_week' => $day,
@@ -66,24 +58,17 @@ class InitWeeklyScheduleService
             $classroomId = (int) $cfg['classroom_id'];
             /** @var \Illuminate\Support\Collection<int,\App\Models\Section> $sections */
             $sections = Section::where('classroom_id', $classroomId)->pluck('id');
-
             $ppd = $cfg['periods_per_day'] ?? [];
             $createdRows = 0;
-
             foreach ($sections as $sectionId) {
                 foreach ($ppd as $day => $count) {
                     $count = (int) $count;
-
-                    // Delete any existing schedule rows for this section/day
                     SectionSchedule::where('section_id', $sectionId)
                         ->where('day_of_week', $day)
                         ->delete();
-
                     if ($count <= 0)
                         continue;
-
                     $usePeriods = array_slice($periodIds, 0, $count);
-
                     $bulk = collect($usePeriods)->map(fn($pid) => [
                         'section_id' => $sectionId,
                         'period_id' => (int) $pid,
@@ -93,21 +78,18 @@ class InitWeeklyScheduleService
                         'created_at' => now(),
                         'updated_at' => now(),
                     ])->all();
-
                     if (!empty($bulk)) {
                         SectionSchedule::insert($bulk);
                         $createdRows += count($bulk);
                     }
                 }
             }
-
             $summary[] = [
                 'classroom_id' => $classroomId,
                 'sections_count' => $sections->count(),
                 'rows_created' => $createdRows,
             ];
         }
-
         return $summary;
     }
 

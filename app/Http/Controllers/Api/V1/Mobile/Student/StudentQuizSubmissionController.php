@@ -16,8 +16,6 @@ class StudentQuizSubmissionController extends Controller
     public function __construct(private StudentQuizSubmissionService $service)
     {
     }
-
-    // GET /quizzes/submittable
     public function submittable(StudentAvailableQuizzesRequest $request): JsonResponse
     {
         try {
@@ -45,7 +43,6 @@ class StudentQuizSubmissionController extends Controller
         }
     }
 
-    // GET /quizzes/{quiz}/questions
     public function questions(Quiz $quiz): JsonResponse
     {
         try {
@@ -70,7 +67,6 @@ class StudentQuizSubmissionController extends Controller
         }
     }
 
-    // POST /quizzes/{quiz}/submit
     public function submit(StudentQuizSubmitRequest $request, Quiz $quiz): JsonResponse
     {
         try {
@@ -85,7 +81,7 @@ class StudentQuizSubmissionController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => __('mobile/student/quiz_submission.success.submitted'),
-                'data' => $res['data'], // {quiz_id, final_result}
+                'data' => $res['data'],
             ]);
         } catch (Throwable $e) {
             report($e);

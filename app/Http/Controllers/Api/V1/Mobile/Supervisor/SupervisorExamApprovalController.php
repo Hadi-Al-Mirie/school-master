@@ -14,12 +14,8 @@ class SupervisorExamApprovalController extends Controller
 {
     public function __construct(private ExamApprovalService $service)
     {
-        // Route group has auth + IsSupervisor + active.semester
     }
 
-    /**
-     * GET: waiting (not released) exams in supervisor's stage.
-     */
     public function waiting(Request $request): JsonResponse
     {
         try {
@@ -36,10 +32,6 @@ class SupervisorExamApprovalController extends Controller
         }
     }
 
-    /**
-     * GET: attempts for a chosen exam (default: pending).
-     * ?status=pending|approved|all
-     */
     public function attempts(Exam $exam, Request $request): JsonResponse
     {
         try {
@@ -60,9 +52,6 @@ class SupervisorExamApprovalController extends Controller
         }
     }
 
-    /**
-     * POST: finalize results (approve + release exam).
-     */
     public function finalize(Exam $exam, FinalizeExamResultsRequest $request): JsonResponse
     {
         try {

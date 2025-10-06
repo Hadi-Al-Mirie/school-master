@@ -12,12 +12,9 @@ class SupervisorExamController extends Controller
 {
     public function __construct(private ExamService $examService)
     {
-        // group middleware already ensures auth + supervisor role
     }
 
-    /**
-     * Create exam for every section in a classroom.
-     */
+
     public function store(StoreExamRequest $request): JsonResponse
     {
         try {

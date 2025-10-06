@@ -25,7 +25,6 @@ class StudentCallController extends Controller
     {
         $user = Auth::user();
         $student = $user ? $user->student : null;
-
         if (!$student) {
             return response()->json([
                 'success' => false,
@@ -33,42 +32,29 @@ class StudentCallController extends Controller
             ], 403);
         }
         Log::info('call id', [$request->call_id]);
-
         $call = Call::find($request->call_id);
-
-
         if (!$call) {
             return response()->json([
                 'success' => false,
                 'message' => __('mobile/student/call.validation.call_exists'),
             ], 404);
         }
-
-        // active check
         if (is_null($call->started_at) || !is_null($call->ended_at)) {
             return response()->json([
                 'success' => false,
                 'message' => __('mobile/student/call.errors.call_not_active'),
             ], 422);
         }
-
-        // ensure student belongs to the call's section
         if ((int) $student->section_id !== (int) $call->section_id) {
             return response()->json([
                 'success' => false,
                 'message' => __('mobile/student/call.errors.not_in_section'),
             ], 403);
         }
-
-        // Determine participant user id (adjust if your participants store student_id instead)
         $participantUserId = $student->user_id;
-
         try {
-            // Check existing participant
             $existing = $call->participants()->where('user_id', $participantUserId)->first();
-
             if ($existing) {
-                // The student was participant before and left
                 if (!is_null($existing->left_at)) {
                     return response()->json([
                         'success' => false,
@@ -78,8 +64,6 @@ class StudentCallController extends Controller
                         ],
                     ], 403);
                 }
-
-                // Participant exists and is still in the call
                 return response()->json([
                     'success' => true,
                     'message' => __('mobile/student/call.errors.already_in_call'),
@@ -149,10 +133,8 @@ class StudentCallController extends Controller
             $now = now();
             $query = ScheduledCall::query()
                 ->where('section_id', $sectionId)
-                // ->where('status', 'scheduled')
                 ->with(['subject', 'teacher'])
                 ->orderBy('scheduled_at', 'asc');
-            // $query->where('scheduled_at', '>=', $now);
             $scheduled = $query->get()->map(function (ScheduledCall $s) {
                 return [
                     'id' => $s->id,

@@ -14,7 +14,6 @@ class CreateCallRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Route middleware IsTeacher should guard this, but keep true here.
         return true;
     }
 
@@ -28,28 +27,17 @@ class CreateCallRequest extends FormRequest
         ];
     }
 
-
-    /**
-     * Localized messages for basic rules.
-     */
     public function messages(): array
     {
         return [
-            // section
             'section_id.required' => __('mobile/teacher/call.validation.section_required'),
             'section_id.integer' => __('mobile/teacher/call.validation.section_integer'),
             'section_id.exists' => __('mobile/teacher/call.validation.section_exists'),
-
-            // subject
             'subject_id.required' => __('mobile/teacher/call.validation.subject_required'),
             'subject_id.integer' => __('mobile/teacher/call.validation.subject_integer'),
             'subject_id.exists' => __('mobile/teacher/call.validation.subject_exists'),
-
-            // started_at
             'started_at.required' => __('mobile/teacher/call.validation.started_required'),
             'started_at.date' => __('mobile/teacher/call.validation.started_date'),
-
-            // channel name
             'channel_name.string' => __('mobile/teacher/call.validation.channel_string'),
             'channel_name.max' => __('mobile/teacher/call.validation.channel_max'),
         ];

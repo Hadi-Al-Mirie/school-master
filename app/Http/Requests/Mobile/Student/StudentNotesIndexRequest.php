@@ -9,7 +9,7 @@ class StudentNotesIndexRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true; // guarded by IsStudent middleware on the route
+        return true;
     }
 
     public function rules(): array

@@ -8,7 +8,6 @@ class SubmitExamResultsRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // controller performs auth/teacher checks
         return true;
     }
 

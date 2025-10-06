@@ -13,7 +13,6 @@ class GenerateScheduleRequest extends FormRequest
      */
     public function authorize()
     {
-        // Only managers (role_id = 1) may generate schedules
         return true;
     }
 
@@ -39,7 +38,6 @@ class GenerateScheduleRequest extends FormRequest
      */
     protected function prepareForValidation()
     {
-        // ensure missing boolean flags default to false
         $this->merge([
             'get_all_schedules' => $this->boolean('get_all_schedules', false),
             'optimize' => $this->boolean('optimize', false),

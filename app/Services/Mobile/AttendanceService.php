@@ -24,9 +24,7 @@ class AttendanceService
         if (!$semester) {
             throw new \RuntimeException(__('mobile/supervisor/attendance.errors.no_active_semester'));
         }
-
         $fqcn = $payload['type'] === 'student' ? \App\Models\Student::class : \App\Models\Teacher::class;
-
         return Attendance::create([
             'attendable_type' => $fqcn,
             'attendable_id' => $payload['attendable_id'],

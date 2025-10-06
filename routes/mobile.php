@@ -18,7 +18,6 @@ use App\Http\Controllers\Api\V1\Mobile\Supervisor\SupervisorNoteController;
 use App\Http\Controllers\Api\V1\Mobile\Supervisor\SupervisorAttendanceController;
 use App\Http\Controllers\Api\V1\Mobile\Supervisor\SupervisorExamController;
 use App\Http\Controllers\Api\V1\Mobile\Supervisor\SupervisorClassroomController;
-use App\Http\Controllers\Api\V1\Mobile\Supervisor\SupervisorNoteApprovalController;
 use App\Http\Controllers\Api\V1\Mobile\Supervisor\SupervisorExamApprovalController;
 use App\Http\Controllers\Api\V1\Mobile\Student\StudentNoteController;
 use App\Http\Controllers\Api\V1\Mobile\Student\StudentAttendanceController;
