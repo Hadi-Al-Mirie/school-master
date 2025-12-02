@@ -6,9 +6,9 @@ use App\Models\SectionSchedule;
 use App\Models\Student;
 use Illuminate\Support\Facades\DB;
 
-class StudentScheduleService
+class ScheduleService
 {
-    public function weekly(int $userId): array
+    public function studentWeekly(int $userId): array
     {
         $student = Student::with(['user:id,first_name,last_name', 'section:id,name', 'classroom:id,name'])
             ->where('user_id', $userId)
@@ -109,4 +109,30 @@ class StudentScheduleService
             ],
         ];
     }
+
+    public function teacherWeekly($user): array
+    {
+        $teacherId = $user->teacher->id;
+        $slots = SectionSchedule::with(['section', 'period', 'subject'])->where('teacher_id', $teacherId)->orderBy('day_of_week')->orderBy('period_id')->get()->groupBy('day_of_week');
+        $schedule = $slots->mapWithKeys(function ($daySlots, $day) {
+            return [
+                $day => $daySlots->map(function ($slot) {
+                    return [
+                        'section' => $slot->section->name,
+                        'period' => $slot->period->name,
+                        'time' => $slot->period->start_time . ' - ' . $slot->period->end_time,
+                        'subject' => $slot->subject->name
+                    ];
+                })->values()
+            ];
+        });
+        return [
+            'status' => 200,
+            'body' => [
+                'success' => true,
+                'schedule' => $schedule
+            ]
+        ];
+    }
+
 }

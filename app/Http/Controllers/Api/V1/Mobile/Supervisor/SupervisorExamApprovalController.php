@@ -5,14 +5,14 @@ namespace App\Http\Controllers\Api\V1\Mobile\Supervisor;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Mobile\Supervisor\FinalizeExamResultsRequest;
 use App\Models\Exam;
-use App\Services\Mobile\ExamApprovalService;
+use App\Services\Mobile\ExamService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class SupervisorExamApprovalController extends Controller
 {
-    public function __construct(private ExamApprovalService $service)
+    public function __construct(private ExamService $service)
     {
     }
 

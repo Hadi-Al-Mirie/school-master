@@ -6,14 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Mobile\Student\StudentAvailableQuizzesRequest;
 use App\Http\Requests\Mobile\Student\StudentQuizSubmitRequest;
 use App\Models\Quiz;
-use App\Services\Mobile\StudentQuizSubmissionService;
+use App\Services\Mobile\QuizService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Throwable;
 
 class StudentQuizSubmissionController extends Controller
 {
-    public function __construct(private StudentQuizSubmissionService $service)
+    public function __construct(private QuizService $service)
     {
     }
     public function submittable(StudentAvailableQuizzesRequest $request): JsonResponse

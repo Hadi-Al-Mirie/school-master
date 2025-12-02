@@ -1,39 +1,24 @@
 <?php
-
 namespace App\Http\Controllers\Api\V1\Dashboard;
-
 use App\Http\Controllers\Controller;
-use App\Models\Year;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
+use App\Http\Requests\Dashboard\Year\YearStoreRequest;
+use App\Services\Dashboard\YearService;
 class YearController extends Controller
 {
-
+    protected YearService $yearService;
+    public function __construct(YearService $yearService)
+    {
+        $this->yearService=$yearService;
+    }
     public function index()
     {
-        $years = Year::all()->select(['id', 'name', 'start_date', 'end_date']);
-        return response()->json(['succes' => true, 'date' => $years], 200);
+        $result=$this->yearService->index();
+        return response()->json($result,200);
     }
-
-    public function store(Request $request)
+    public function store(YearStoreRequest $request)
     {
-        Log::info(
-            'trying to store a year',
-            ['request' => $request->all()]
-        );
-        $validator = $request->validate([
-            'name' => 'required|string',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after:start_date',
-        ]);
-
-        $semester = Year::create([
-            'name' => $validator['name'],
-            'start_date' => $validator['start_date'],
-            'end_date' => $validator['end_date'],
-        ]);
-
-        return response()->json($semester, 201);
+        $validated=$request->validated();
+        $year=$this->yearService->store($validated);
+        return response()->json($year,201);
     }
-
 }

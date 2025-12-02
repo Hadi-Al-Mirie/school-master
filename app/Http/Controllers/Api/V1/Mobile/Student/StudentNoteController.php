@@ -4,14 +4,14 @@ namespace App\Http\Controllers\Api\V1\Mobile\Student;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Mobile\Student\StudentNotesIndexRequest;
-use App\Services\Mobile\StudentNoteService;
+use App\Services\Mobile\NoteService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Throwable;
 
 class StudentNoteController extends Controller
 {
-    public function __construct(private StudentNoteService $service)
+    public function __construct(private NoteService $service)
     {
     }
 
@@ -21,7 +21,7 @@ class StudentNoteController extends Controller
             $userId = Auth::id();
             $filters = $request->only(['status', 'type', 'sort', 'semester_id']);
 
-            $result = $this->service->index($userId, $filters);
+            $result = $this->service->studentNotesIndex($userId, $filters);
 
             if (!$result['ok']) {
                 return response()->json([

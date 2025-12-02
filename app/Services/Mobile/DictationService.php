@@ -8,7 +8,7 @@ use App\Models\Student;
 use App\Models\Year;
 use Illuminate\Support\Facades\DB;
 
-class StudentDictationService
+class DictationService
 {
     public function index(int $userId, array $filters = []): array
     {
@@ -97,6 +97,41 @@ class StudentDictationService
                 'dictations' => $items,
                 'count' => $items->count(),
             ],
+        ];
+    }
+
+
+    public function teacherStore(array $data, $user): array
+    {
+        $teacher = $user ? $user->teacher : null;
+        $semester = Semester::where('is_active', true)->firstOrFail();
+        $student = Student::find($data['student_id']);
+        $sectionId = $student->section_id;
+        $teaches = \App\Models\SectionSubject::where('section_id', $sectionId)->where('subject_id', $data['subject_id'])->where('teacher_id', $teacher->id)->exists();
+        if (!$teaches) {
+            return [
+                'status' => 403,
+                'body' => [
+                    'success' => false,
+                    'message' => __('mobile/teacher/dictation.errors.teacher_not_assigned')
+                ]
+            ];
+        }
+        $dictation = Dictation::create([
+            'student_id' => $student->id,
+            'subject_id' => $data['subject_id'],
+            'result' => $data['result'],
+            'teacher_id' => $teacher->id,
+            'semester_id' => $semester->id,
+            'section_id' => $student->section_id
+        ]);
+        return [
+            'status' => 201,
+            'body' => [
+                'success' => true,
+                'message' => __('mobile/teacher/dictation.store.success'),
+                'data' => $dictation
+            ]
         ];
     }
 }

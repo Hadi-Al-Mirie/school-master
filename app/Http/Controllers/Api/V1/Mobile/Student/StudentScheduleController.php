@@ -3,14 +3,14 @@
 namespace App\Http\Controllers\Api\V1\Mobile\Student;
 
 use App\Http\Controllers\Controller;
-use App\Services\Mobile\StudentScheduleService;
+use App\Services\Mobile\ScheduleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Throwable;
 
 class StudentScheduleController extends Controller
 {
-    public function __construct(private StudentScheduleService $service)
+    public function __construct(private ScheduleService $service)
     {
     }
 
@@ -18,7 +18,7 @@ class StudentScheduleController extends Controller
     {
         try {
             $userId = Auth::id();
-            $res = $this->service->weekly($userId);
+            $res = $this->service->studentWeekly($userId);
 
             if (!$res['ok']) {
                 return response()->json([

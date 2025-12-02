@@ -4,14 +4,14 @@ namespace App\Http\Controllers\Api\V1\Mobile\Student;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Mobile\Student\StudentQuizzesIndexRequest;
-use App\Services\Mobile\StudentQuizService;
+use App\Services\Mobile\QuizService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Throwable;
 
 class StudentQuizController extends Controller
 {
-    public function __construct(private StudentQuizService $service)
+    public function __construct(private QuizService $service)
     {
     }
 

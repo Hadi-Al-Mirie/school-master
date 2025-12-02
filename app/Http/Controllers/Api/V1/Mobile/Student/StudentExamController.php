@@ -4,14 +4,14 @@ namespace App\Http\Controllers\Api\V1\Mobile\Student;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Mobile\Student\StudentExamsIndexRequest;
-use App\Services\Mobile\StudentExamService;
+use App\Services\Mobile\ExamService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Throwable;
 
 class StudentExamController extends Controller
 {
-    public function __construct(private StudentExamService $service)
+    public function __construct(private ExamService $service)
     {
     }
 
@@ -24,7 +24,7 @@ class StudentExamController extends Controller
                 'min_result','max_result','submitted_from','submitted_to','sort'
             ]);
 
-            $result = $this->service->index($userId, $filters);
+            $result = $this->service->studentExamsIndex($userId, $filters);
 
             if (!$result['ok']) {
                 return response()->json([

@@ -1,77 +1,29 @@
 <?php
-
 namespace App\Http\Controllers\Api\V1\Dashboard;
-
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Models\Supervisor;
-use App\Models\User;
-use Illuminate\Support\Facades\DB;
-
+use App\Http\Requests\Dashboard\Supervisor\SupervisorStoreRequest;
+use App\Services\Dashboard\SupervisorService;
 class SupervisorController extends Controller
 {
+    protected SupervisorService $supervisorService;
+    public function __construct(SupervisorService $supervisorService)
+    {
+        $this->supervisorService = $supervisorService;
+    }
     public function index()
     {
-        $supervisor = Supervisor::all();
+        $supervisor = $this->supervisorService->index();
         return response()->json($supervisor, 200);
     }
-
-    public function store(Request $request)
+    public function store(SupervisorStoreRequest $request)
     {
-        $validated = $request->validate([
-            'first_name' => 'required|string|max:150',
-            'last_name' => 'required|string|max:150',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8',
-            'phone' => 'required|string|min:10|max:20',
-            'stage_id' => 'required|integer|exists:stages,id'
-        ]);
-        $email = $request->email;
-        $password = $request->password;
-
-        DB::beginTransaction();
-        try {
-            $user = User::create([
-                'first_name' => $validated['first_name'],
-                'last_name' => $validated['last_name'],
-                'email' => $email,
-                'password' => $password,
-                'role_id' => 4,
-            ]);
-            $supervisor = Supervisor::create([
-                'user_id' => $user->id,
-                'phone' => $validated['phone'],
-                'stage_id' => $validated['stage_id'],
-            ]);
-            DB::commit();
-            return response()->json([
-                'success' => true,
-                'message' => 'Supervisor created successfully',
-                'data' => [
-                    'supervisor' => $supervisor,
-                    'user_account' => [
-                        'email' => $email,
-                    ]
-                ]
-            ], 201);
-
-        } catch (\Exception $e) {
-
-            DB::rollBack();
-
-            \Log::error('Create student failed: ' . $e->getMessage());
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to create student',
-                'error' => $e->getMessage(),
-            ], 500);
-        }
+        $validated = $request->validated();
+        $result = $this->supervisorService->store($validated);
+        return response()->json($result, 201);
     }
-
     public function show($id)
     {
-        $supervisor = Supervisor::findOrFail($id);
+        $supervisor = $this->supervisorService->show($id);
         return response()->json($supervisor, 200);
     }
 }

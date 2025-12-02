@@ -4,14 +4,14 @@ namespace App\Http\Controllers\Api\V1\Mobile\Student;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Mobile\Student\StudentAttendancesIndexRequest;
-use App\Services\Mobile\StudentAttendanceService;
+use App\Services\Mobile\AttendanceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Throwable;
 
 class StudentAttendanceController extends Controller
 {
-    public function __construct(private StudentAttendanceService $service)
+    public function __construct(private AttendanceService $service)
     {
     }
 
@@ -21,7 +21,7 @@ class StudentAttendanceController extends Controller
             $userId = Auth::id();
             $filters = $request->only(['attendance_type_id', 'semester_id', 'date_from', 'date_to', 'sort']);
 
-            $result = $this->service->index($userId, $filters);
+            $result = $this->service->stundetAttendancesIndex($userId, $filters);
 
             if (!$result['ok']) {
                 return response()->json([
